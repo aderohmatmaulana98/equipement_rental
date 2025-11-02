@@ -64,6 +64,9 @@ route::middleware(['auth'])->group(function () {
         Route::get('/list-barang', [WarehouseController::class, 'list_barang'])->name('warehouse.list_barang');
         Route::get('/warehouse/sewa', [WarehouseController::class, 'penyewaan'])->name('warehouse.penyewaan');
         
+        Route::get('/sewa', [WarehouseController::class, 'penyewaan'])->name('warehouse.penyewaan');
+        Route::get('/sewa/{id}', [WarehouseController::class, 'show'])->name('warehouse.detail');
+        Route::post('/sewa/update-status', [WarehouseController::class, 'updateStatus'])->name('warehouse.updateStatus');
     });
 
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');

@@ -6,6 +6,7 @@ use App\Models\Barang;
 use App\Models\JenisBarang;
 use App\Models\User;
 use App\Models\Sewa;
+use App\Models\DetailSewa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -50,5 +51,28 @@ class WarehouseController extends Controller
         $title = 'Sewa Barang';
         $sewas = Sewa::all();
         return view('warehouse.penyewaan', compact('title', 'sewas'));
+    }
+
+    public function show($id)
+    {
+        $title = 'Detail Sewa Barang';
+        $sewa = Sewa::findOrFail($id);
+        $detailSewa = DetailSewa::with('barang')->where('id_sewa', $sewa->id)->get();
+        // dd($detailSewa);
+        return view('warehouse.detail', compact('title', 'detailSewa', 'sewa'));
+    }
+
+    public function updateStatus(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:sewas,id',
+            'status' => 'required|in:pending,disetujui,berjalan,selesai,dibatalkan',
+        ]);
+
+        $sewa = Sewa::findOrFail($request->id);
+        $sewa->status = $request->status;
+        $sewa->save();
+
+        return redirect()->back()->with('success', 'Status sewa berhasil diperbarui!');
     }
 }
