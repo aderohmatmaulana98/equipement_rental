@@ -132,7 +132,7 @@
                                             @endif
                                         </td>   
                                         <td>
-                                            <a href="#" class="btn btn-primary btn-sm">Detail</a>
+                                            <a href="{{ route('warehouse.detail', $row->id) }}" class="btn btn-primary btn-sm">Detail</a>
                                         </td>                             
                                     </tr>
                                 @endforeach
