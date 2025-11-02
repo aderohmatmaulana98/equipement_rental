@@ -186,7 +186,11 @@ class SewaController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $title = 'Detail Sewa';
+        $sewa = Sewa::findOrFail($id);
+        $detailSewa = DetailSewa::with('barang')->where('id_sewa', $sewa->id)->get();
+
+        return view('user.detail_sewa', compact('detailSewa',  'title'));
     }
 
     /**

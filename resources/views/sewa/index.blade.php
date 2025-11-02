@@ -138,11 +138,13 @@
                                             <!-- tombol bayarnya -->
                                             <form id="payment-form-{{ $row->id }}" onsubmit="payNow(event, {{ $row->id }})">
                                                 @csrf
-                                                <button type="submit" class="btn btn-primary btn-sm">Bayar Sekarang</button>
+                                                <button type="submit" class="btn btn-primary btn-sm">Bayar</button>
                                             </form>
                                             @else
-                                                <span>-</span>
+                                                <span></span>
                                             @endif
+
+                                            <a href="{{ route('sewa.show', $row->id) }}" class="btn btn-info btn-sm">Detail</a>
                                         </td>
                                     </tr>
                                 @endforeach
