@@ -21,6 +21,10 @@ class CartController extends Controller
 
         $cart = session()->get('cart', []);
 
+        if ($barang->stok < $qty) {
+            return redirect()->back()->with('error', 'Stok barang tidak mencukupi.');
+        }
+
         if (isset($cart[$barang->id])) {
             $cart[$barang->id]['qty'] += $qty;
         } else {

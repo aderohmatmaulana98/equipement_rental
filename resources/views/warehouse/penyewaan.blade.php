@@ -124,11 +124,7 @@
                                                     
                                                 @endif
                                             @elseif($row->status === 'belum bayar' && $row->batas_waktu_pembayaran)
-                                                <span class="badge bg-danger">Belum Bayar</span>
-                                                <span>Bayar dan konfirmasi sebelum :</span>
-                                                <span id="countdown-{{ $row->id }}" class="text-danger" 
-                                                    data-deadline="{{ \Carbon\Carbon::parse($row->batas_waktu_pembayaran)->toIso8601String() }}">
-                                                </span>
+                                                <span class="badge bg-danger">Belum Bayar</span>                                             
                                             @elseif($row->status === 'batal' || $row->status === 'dibatalkan')
                                                 <span class="badge bg-secondary">Batal</span>
                                             @else
@@ -152,34 +148,4 @@
         </div><!--End container-fluid-->
     </main><!--End app-wrapper-->
 
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const countdownElements = document.querySelectorAll("[id^='countdown-']");
-
-    countdownElements.forEach(function (element) {
-        const deadline = new Date(element.dataset.deadline).getTime();
-
-        const timer = setInterval(function () {
-            const now = new Date().getTime();
-            const distance = deadline - now;
-
-            if (distance <= 0) {
-                clearInterval(timer);
-                element.innerHTML = '<span class="badge bg-secondary">Batal</span>';
-                element.classList.remove('text-danger');
-                return;
-            }
-
-            // Hitung sisa waktu
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            // Format tampilannya
-            element.textContent = `${hours}j ${minutes}m ${seconds}d`;
-        }, 1000);
-    });
-});
-</script>
 @endsection

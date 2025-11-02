@@ -158,6 +158,7 @@
         </div><!--End container-fluid-->
     </main><!--End app-wrapper-->
 
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
 
 <script>
 async function payNow(event, id) {
