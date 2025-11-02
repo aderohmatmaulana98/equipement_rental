@@ -3,11 +3,14 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\JenisBarangController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PemilikController;
 use App\Http\Controllers\SewaController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [AuthController::class, 'login'])->name('login');
@@ -16,6 +19,10 @@ Route::post('/signup', [AuthController::class, 'signup_action'])->name('signup_a
 Route::post('/login_action', [AuthController::class, 'login_action'])->name('login_action');
 // Route::get('/register', [AuthController::class, 'register'])->name('register');
 // Route::post('/register_action', [AuthController::class, 'register_action'])->name('register_action');
+// Route::get('/payment', function () {
+//     return view('payment'); // view untuk testing
+// });
+
 
 route::middleware(['auth'])->group(function () {
     // Routes untuk Pemilik Kantor (role_id = 1)
@@ -45,13 +52,21 @@ route::middleware(['auth'])->group(function () {
         Route::get('/list-barang', [UserController::class, 'list_barang'])->name('user.list_barang');
         Route::resource('sewa', SewaController::class);
         Route::put('/confirm/{id}', [SewaController::class, 'confirm_pay'])->name('sewa.confirm');
+        Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
+        Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+        Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
+
+        Route::post('/checkout', [SewaController::class, 'checkout'])->name('checkout');
     });
     // Routes untuk warehouse (role_id = 4)
     Route::middleware(['role:4'])->prefix('warehouse')->group(function () {
         Route::get('/dashboard', [WarehouseController::class, 'dashboard'])->name('warehouse.dashboard');
         Route::get('/list-barang', [WarehouseController::class, 'list_barang'])->name('warehouse.list_barang');
+        Route::get('/warehouse/sewa', [WarehouseController::class, 'penyewaan'])->name('warehouse.penyewaan');
     });
 
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/unauthorized', [AuthController::class, 'not_authorized'])->name('unauthorized');
 });
+Route::post('/payment/{id}', [PaymentController::class, 'createTransaction'])->name('payment');
+Route::post('/midtrans/callback', [PaymentController::class, 'callback'])->withoutMiddleware([VerifyCsrfToken::class]);

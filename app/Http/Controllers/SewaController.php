@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Barang;
 use App\Models\DetailSewa;
 use App\Models\Sewa;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -117,6 +118,68 @@ class SewaController extends Controller
             return back()->withInput()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+
+    public function checkout(Request $request)
+    {
+        $cart = session()->get('cart', []);
+        if (empty($cart)) {
+            return response()->json(['error' => 'Keranjang kosong!'], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $kodeSewa = 'SEWA-' . date('Ymd') . '-' . str_pad(Sewa::count() + 1, 3, '0', STR_PAD_LEFT).'-'.uniqid();
+
+            $tglSewa = Carbon::parse($request->tgl_sewa);
+            $tglLoadingOut = Carbon::parse($request->tgl_loading_out);
+
+            // Hitung durasi hari sewa (minimal 1 hari)
+            $durasiHari = $tglSewa->diffInDays($tglLoadingOut);
+            $durasiHari = $durasiHari > 0 ? $durasiHari : 1;
+
+            // Hitung total harga dari keranjang
+            $totalHarga = collect($cart)->sum(fn($item) => $item['harga'] * $item['qty']);
+
+            // Buat data sewa
+            $sewa = Sewa::create([
+                'kode_sewa' => $kodeSewa,
+                'tgl_sewa' => $request->tgl_sewa,
+                'tgl_acara' => $request->tgl_acara,
+                'jam_acara' => $request->jam_acara,
+                'tgl_loading' => $request->tgl_loading,
+                'jam_loading' => $request->jam_loading,
+                'tgl_loading_out' => $request->tgl_loading_out,
+                'alamat_acara' => $request->alamat_acara,
+                'batas_waktu_pembayaran' => now()->addHour(),
+                'total_biaya' => $totalHarga * $durasiHari,
+                'uang_muka' => $totalHarga * 0.5,
+                'status' => 'belum bayar',
+                'id_user' => auth()->id(),
+            ]);
+
+            // Simpan detail sewa per item
+            foreach ($cart as $item) {
+                DetailSewa::create([
+                    'id_sewa' => $sewa->id,
+                    'id_barang' => $item['id'],
+                    'qty' => $item['qty'],
+                    'harga_satuan' => $item['harga'],
+                    'subtotal' => $item['harga'] * $item['qty'] * $durasiHari, // ✅ per item × durasi
+                ]);
+            }
+
+            DB::commit();
+            session()->forget('cart');
+
+            return redirect()->route('sewa.index')->with('success', 'Data sewa berhasil disimpan.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
 
     /**
      * Display the specified resource.

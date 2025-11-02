@@ -125,25 +125,19 @@
                                                 @endif
                                             @elseif($row->status === 'belum bayar' && $row->batas_waktu_pembayaran)
                                                 <span class="badge bg-danger">Belum Bayar</span>
-                                                
+                                                <span>Bayar dan konfirmasi sebelum :</span>
+                                                <span id="countdown-{{ $row->id }}" class="text-danger" 
+                                                    data-deadline="{{ \Carbon\Carbon::parse($row->batas_waktu_pembayaran)->toIso8601String() }}">
+                                                </span>
                                             @elseif($row->status === 'batal' || $row->status === 'dibatalkan')
                                                 <span class="badge bg-secondary">Batal</span>
                                             @else
                                                 <span class="badge bg-secondary">Tidak diketahui</span>
                                             @endif
-                                        </td>                                 
+                                        </td>   
                                         <td>
-                                            @if (!in_array($row->status, ['pending', 'disetujui', 'berjalan', 'selesai']))
-                                            
-                                            <!-- tombol bayarnya -->
-                                            <form id="payment-form-{{ $row->id }}" onsubmit="payNow(event, {{ $row->id }})">
-                                                @csrf
-                                                <button type="submit" class="btn btn-primary btn-sm">Bayar Sekarang</button>
-                                            </form>
-                                            @else
-                                                <span>-</span>
-                                            @endif
-                                        </td>
+                                            <a href="#" class="btn btn-primary btn-sm">Detail</a>
+                                        </td>                             
                                     </tr>
                                 @endforeach
                             </tbody>                           
@@ -160,51 +154,32 @@
 
 
 <script>
-async function payNow(event, id) {
-    event.preventDefault();
+document.addEventListener("DOMContentLoaded", function () {
+    const countdownElements = document.querySelectorAll("[id^='countdown-']");
 
-    try {
-        const response = await fetch(`/payment/${id}`, {
-            method: "POST",
-            headers: {
-                "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-            },
-        });
+    countdownElements.forEach(function (element) {
+        const deadline = new Date(element.dataset.deadline).getTime();
 
-        const data = await response.json();
+        const timer = setInterval(function () {
+            const now = new Date().getTime();
+            const distance = deadline - now;
 
-        if (data.snapToken) {
-            snap.pay(data.snapToken, {
-                onSuccess: function(result) {
-                    alert("Pembayaran sukses!");
-                    console.log(result);
-                    location.reload();
-                },
-                onPending: function(result) {
-                    alert("Menunggu pembayaran...");
-                    console.log(result);
-                    location.reload();
-                },
-                onError: function(result) {
-                    alert("Pembayaran gagal!");
-                    console.log(result);
-                    location.reload();
-                },
-                onClose: function() {
-                    alert("Kamu menutup popup sebelum menyelesaikan pembayaran");
-                }
-            });
-        } else {
-            console.error("Token tidak ditemukan:", data);
-            alert("Gagal mendapatkan token Midtrans: " + (data.error ?? "Unknown error"));
-        }
-    } catch (err) {
-        console.error("Terjadi error:", err);
-        alert("Gagal memproses pembayaran");
-    }
-}
+            if (distance <= 0) {
+                clearInterval(timer);
+                element.innerHTML = '<span class="badge bg-secondary">Batal</span>';
+                element.classList.remove('text-danger');
+                return;
+            }
+
+            // Hitung sisa waktu
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Format tampilannya
+            element.textContent = `${hours}j ${minutes}m ${seconds}d`;
+        }, 1000);
+    });
+});
 </script>
-
 @endsection

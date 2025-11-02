@@ -100,15 +100,10 @@
                         </a>
                         <ul class="pe-slide-menu collapse" id="collapseApplications">
                             <li class="pe-slide-item">
-                                <a href="{{ route('admin.admin') }}" class="pe-nav-link">
+                                <a href="{{ route('warehouse.penyewaan') }}" class="pe-nav-link">
                                     Sewa
                                 </a>
-                            </li>
-                            <li class="pe-slide-item">
-                                <a href="{{ route('customer.customer') }}" class="pe-nav-link">
-                                    Pengembalian
-                                </a>
-                            </li>                   
+                            </li>                  
                         </ul>
                     </li>
                     @endif  
