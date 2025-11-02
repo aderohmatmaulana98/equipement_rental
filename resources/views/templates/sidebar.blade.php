@@ -23,6 +23,12 @@
                                 <span class="pe-nav-content">Dashboard</span>
                             </a>                        
                         </li>
+                        <li class="pe-slide pe-has-sub">
+                            <a href="{{ route('laporan.index') }}" class="pe-nav-link" >
+                                <i class="ri-dashboard-line pe-nav-icon"></i>
+                                <span class="pe-nav-content">Report</span>
+                            </a>                        
+                        </li>
                     @elseif (auth()->user()->role_id == 2)
                         <li  class="pe-slide pe-has-sub">
                             <a href="{{ route('admin.dashboard') }}" class="pe-nav-link" >

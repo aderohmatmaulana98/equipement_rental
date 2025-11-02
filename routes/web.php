@@ -28,6 +28,8 @@ route::middleware(['auth'])->group(function () {
     // Routes untuk Pemilik Kantor (role_id = 1)
     Route::middleware(['role:1'])->prefix('pemilik')->group(function () {
         Route::get('/dashboard', [PemilikController::class, 'dashboard'])->name('pemilik.dashboard');
+        Route::get('laporan', [PemilikController::class, 'index'])->name('laporan.index');
+        Route::get('laporan/export/pdf', [PemilikController::class, 'exportPDF'])->name('laporan.export.pdf');
     });
     
     // Routes untuk Admin Kantor (role_id = 2)

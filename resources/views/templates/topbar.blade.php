@@ -125,8 +125,8 @@
                     <div class="dropdown pe-dropdown-mega d-none d-md-block">
                         <button class="header-profile-btn btn gap-1 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <div class="d-none d-xl-block pe-2">
-                                <span class="d-block mb-0 fs-12 fw-semibold">Jaydon Levin</span>
-                                <span class="d-block mb-0 fs-10 text-muted">jaydon@gmail.com</span>
+                                <span class="d-block mb-0 fs-12 fw-semibold">{{ auth()->user()->name }}</span>
+                                <span class="d-block mb-0 fs-10 text-muted">{{ auth()->user()->email }}</span>
                             </div>
                             <span class="header-btn btn position-relative">
                                 <img src="{{ asset('assets/images/avatar/avatar-3.jpg')}}" alt="Avatar Image" class="img-fluid rounded-circle">
@@ -137,23 +137,18 @@
                                 <img src="{{ asset('assets/images/avatar/avatar-3.jpg')}}" alt="Avatar Image" class="avatar-md">
                                 <div>
                                     <a href="javascript:void(0)">
-                                        <h6 class="mb-0 lh-base">Jaydon Levin</h6>
+                                        <h6 class="mb-0 lh-base">{{ auth()->user()->name }}</h6>
                                     </a>
-                                    <p class="mb-0 fs-13 text-muted">jaydon@gmail.com</p>
+                                    <p class="mb-0 fs-13 text-muted">{{ auth()->user()->email }}</p>
                                 </div>
                             </div>
-                            <ul class="list-unstyled mb-1 border-bottom pb-1">
+                            {{-- <ul class="list-unstyled mb-1 border-bottom pb-1">
                                 <li><a class="dropdown-item" href="pages-profile.html"><i class="bi bi-person me-2"></i> View Profile</a></li>
                                 <li><a class="dropdown-item" href="pages-profile.html"><i class="bi bi-gear me-2"></i> Settings</a></li>
                                 <li><a class="dropdown-item" href="pages-billing-subscription.html"><i class="bi bi-award me-2"></i> Subscription</a></li>
-                            </ul>
-                            <ul class="list-unstyled mb-1 border-bottom pb-1">
-                                <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-clock me-2"></i> ChangLog</a></li>
-                                <li><a class="dropdown-item" href="pages-pricing.html"><i class="bi bi-currency-dollar"></i> Pricing</a></li>
-                                <li><a class="dropdown-item" href="javascript:void(0)"><i class="bi bi-headset me-2"></i> Support</a></li>
-                            </ul>
+                            </ul> --}}
                             <ul class="list-unstyled mb-0">
-                                <li><a class="dropdown-item" href="auth-signout.html"><i class="bi bi-box-arrow-right me-2"></i> Sign Out</a></li>
+                                <li><a class="dropdown-item" href="{{ route('logout') }}"><i class="bi bi-box-arrow-right me-2"></i> Sign Out</a></li>
                             </ul>
                         </div>
                     </div>
