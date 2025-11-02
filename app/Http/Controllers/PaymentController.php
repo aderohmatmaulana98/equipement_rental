@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Barang;
+use App\Models\DetailSewa;
 use App\Models\Sewa;
 use Illuminate\Http\Request;
 use Midtrans\Config;
@@ -64,6 +66,12 @@ class PaymentController extends Controller
 
 
             $sewa = Sewa::where('kode_sewa', $orderId)->first();
+
+            $detailSewa = DetailSewa::where('id_sewa', $sewa->id)->get();
+
+            foreach ($detailSewa as $ds) {
+                Barang::where('id', $ds->id_barang)->decrement('stok', $ds->qty);
+            }
 
             if (!$sewa) {
 
