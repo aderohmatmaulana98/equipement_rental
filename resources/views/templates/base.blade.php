@@ -102,6 +102,15 @@
 
 <script src="{{ asset('assets/js/table/datatable.init.js') }}"></script>
 
+
+
+<script src="{{ asset('assets/libs/jsvectormap/jsvectormap.min.js') }}"></script>
+<script src="{{ asset('assets/libs/jsvectormap/maps/world.js') }}"></script>
+
+<script src="{{ asset('assets/libs/apexcharts/apexcharts.min.js') }}"></script>
+
+<script src="{{ asset('assets/js/dashboard/analytics.init.js') }}"></script>
+
 </body>
 
 </html>

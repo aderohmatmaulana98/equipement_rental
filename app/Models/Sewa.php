@@ -50,4 +50,10 @@ class Sewa extends Model
         $this->sisa_pembayaran = $this->total_biaya - $this->uang_muka;
         $this->save();
     }
+
+    // Relasi ke Barang
+    public function barang()
+    {
+        return $this->belongsTo(Barang::class, 'id');
+    }
 }
