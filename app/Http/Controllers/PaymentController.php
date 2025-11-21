@@ -38,6 +38,10 @@ class PaymentController extends Controller
                 'email' => $sewa->user->email,
                 'phone' => $sewa->user->no_hp,
             ],
+            'callbacks' => [
+                // Ini adalah URL kemana user akan diarahkan setelah selesai bayar di Snap
+                'finish' => 'http://127.0.0.1:8000/user/sewa', 
+            ],
         ];
 
         try {
