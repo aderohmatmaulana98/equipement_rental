@@ -301,8 +301,9 @@ class AdminController extends Controller
             
             $tglAcara = \Carbon\Carbon::parse($request->tgl_acara);
             $tglLoadingOut = \Carbon\Carbon::parse($request->tgl_loading_out);
-            $durasiHari = $tglAcara->diffInDays($tglLoadingOut);
-            $durasiHari = $durasiHari > 0 ? $durasiHari : 1;
+            // Hitung durasi hari sewa dari tgl_acara sampai tgl_loading_out (inklusif)
+            // Tanggal sama = 1 hari, tanggal 11 ke 12 = 2 hari, dst.
+            $durasiHari = $tglAcara->diffInDays($tglLoadingOut) + 1;
 
             // Hitung total dari barang
             $totalBiaya = 0;
