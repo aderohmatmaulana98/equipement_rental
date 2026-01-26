@@ -83,8 +83,8 @@
                             @php
                                 $tglAcara = \Carbon\Carbon::parse($sewa->tgl_acara);
                                 $tglLoadingOut = \Carbon\Carbon::parse($sewa->tgl_loading_out);
-                                $durasiHari = $tglAcara->diffInDays($tglLoadingOut);
-                                $durasiHari = $durasiHari > 0 ? $durasiHari : 1;
+                                // Hitung inklusif: tanggal sama = 1 hari, 11 ke 12 = 2 hari
+                                $durasiHari = $tglAcara->diffInDays($tglLoadingOut) + 1;
                             @endphp
                             <table class="table table-borderless mb-0">
                                 <tr>

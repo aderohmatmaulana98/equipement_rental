@@ -133,7 +133,7 @@
                                                 </td>
                                                 <td class="text-truncate" style="max-width: 200px;">{{ $sewa->alamat_acara }}</td>
                                                 <td class="text-end pe-4">
-                                                    <a href="{{ route('admin.sewa.detail', $sewa->id) }}" class="btn btn-sm btn-outline-primary">Detail</a>
+                                                    <a href="{{ route('warehouse.detail', $sewa->id) }}" class="btn btn-sm btn-outline-primary">Detail</a>
                                                 </td>
                                             </tr>
                                         @empty
@@ -187,7 +187,7 @@
                                                     @endif
                                                 </td>
                                                 <td class="text-end pe-4">
-                                                    <a href="{{ route('admin.sewa.detail', $sewa->id) }}" class="btn btn-sm btn-outline-success">Proses</a>
+                                                    <a href="{{ route('warehouse.detail', $sewa->id) }}" class="btn btn-sm btn-outline-success">Proses</a>
                                                 </td>
                                             </tr>
                                         @empty
