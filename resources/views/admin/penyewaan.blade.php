@@ -63,8 +63,11 @@
             <div class="col-12">
                 <div class="card">
                     <!--start::card-->
-                   <div class="card-header">
+                   <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0"> Table {{ $title }} </h5>
+                        <a href="{{ route('admin.create_sewa') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Tambah Sewa Offline
+                        </a>
                     </div>
                         
                     <div class="card-body table-responsive">
@@ -113,7 +116,7 @@
                                             @endif
                                         </td>   
                                         <td>
-                                            <a href="{{ route('warehouse.detail', $row->id) }}" class="btn btn-primary btn-sm">Detail</a>
+                                            <a href="{{ route('admin.sewa.detail', $row->id) }}" class="btn btn-primary btn-sm">Detail</a>
                                         </td>                             
                                     </tr>
                                 @endforeach

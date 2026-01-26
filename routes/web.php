@@ -46,6 +46,14 @@ route::middleware(['auth'])->group(function () {
         Route::post('/customer/store', [AdminController::class, 'customer_store'])->name('customer.store');
         Route::put('/customer/update/{id}', [AdminController::class, 'customer_update'])->name('customer.update');
         Route::delete('/customer/delete/{id}', [AdminController::class, 'customer_delete'])->name('customer.delete');
+
+        // Penyewaan Management
+        Route::get('/penyewaan', [AdminController::class, 'penyewaan'])->name('admin.penyewaan');
+        Route::get('/penyewaan/create', [AdminController::class, 'createSewa'])->name('admin.create_sewa');
+        Route::post('/penyewaan/store', [AdminController::class, 'storeSewa'])->name('admin.store_sewa');
+        Route::get('/penyewaan/{id}', [AdminController::class, 'showSewa'])->name('admin.sewa.detail');
+        Route::get('/penyewaan/{id}/invoice', [AdminController::class, 'printInvoiceSewa'])->name('admin.sewa.invoice');
+        Route::post('/penyewaan/update-status', [AdminController::class, 'updateStatusSewa'])->name('admin.sewa.updateStatus');
     });
     
     // Routes untuk User biasa (role_id = 3)
@@ -53,6 +61,7 @@ route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
         Route::get('/list-barang', [UserController::class, 'list_barang'])->name('user.list_barang');
         Route::resource('sewa', SewaController::class);
+        Route::get('/sewa/{id}/invoice', [SewaController::class, 'printInvoice'])->name('sewa.invoice');
         Route::put('/confirm/{id}', [SewaController::class, 'confirm_pay'])->name('sewa.confirm');
         Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
         Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
@@ -68,6 +77,7 @@ route::middleware(['auth'])->group(function () {
         
         Route::get('/sewa', [WarehouseController::class, 'penyewaan'])->name('warehouse.penyewaan');
         Route::get('/sewa/{id}', [WarehouseController::class, 'show'])->name('warehouse.detail');
+        Route::get('/sewa/{id}/invoice', [WarehouseController::class, 'printInvoice'])->name('warehouse.invoice');
         Route::post('/sewa/update-status', [WarehouseController::class, 'updateStatus'])->name('warehouse.updateStatus');
     });
 
@@ -75,4 +85,5 @@ route::middleware(['auth'])->group(function () {
     Route::get('/unauthorized', [AuthController::class, 'not_authorized'])->name('unauthorized');
 });
 Route::post('/payment/{id}', [PaymentController::class, 'createTransaction'])->name('payment');
+Route::post('/payment/{id}/pelunasan', [PaymentController::class, 'createPelunasan'])->name('payment.pelunasan');
 Route::post('/midtrans/callback', [PaymentController::class, 'callback'])->withoutMiddleware([VerifyCsrfToken::class]);
