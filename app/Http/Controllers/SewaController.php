@@ -145,9 +145,9 @@ class SewaController extends Controller
             $tglAcara = Carbon::parse($request->tgl_acara);
             $tglLoadingOut = Carbon::parse($request->tgl_loading_out);
 
-            // Hitung durasi hari sewa dari tgl_acara sampai tgl_loading_out (minimal 1 hari)
-            $durasiHari = $tglAcara->diffInDays($tglLoadingOut);
-            $durasiHari = $durasiHari > 0 ? $durasiHari : 1;
+            // Hitung durasi hari sewa dari tgl_acara sampai tgl_loading_out (inklusif)
+            // Tanggal sama = 1 hari, tanggal 11 ke 12 = 2 hari, dst.
+            $durasiHari = $tglAcara->diffInDays($tglLoadingOut) + 1;
 
             // Hitung total harga dari keranjang: harga × qty × durasi
             $subtotalBarang = collect($cart)->sum(fn($item) => $item['harga'] * $item['qty']);
