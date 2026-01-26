@@ -86,6 +86,21 @@
                             </li>                   
                         </ul>
                     </li>
+
+                    <li class="pe-slide pe-has-sub">
+                        <a href="#collapsePenyewaan" class="pe-nav-link" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapsePenyewaan">
+                            <i class="ri-shopping-cart-2-line pe-nav-icon"></i>
+                            <span class="pe-nav-content">Penyewaan</span>
+                            <i class="ri-arrow-down-s-line pe-nav-arrow"></i>
+                        </a>
+                        <ul class="pe-slide-menu collapse" id="collapsePenyewaan">
+                            <li class="pe-slide-item">
+                                <a href="{{ route('admin.penyewaan') }}" class="pe-nav-link">
+                                    Daftar Sewa
+                                </a>
+                            </li>                  
+                        </ul>
+                    </li>
                     @endif
 
                     {{-- for warehouse --}}

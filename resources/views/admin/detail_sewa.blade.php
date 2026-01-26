@@ -32,20 +32,20 @@
 
                 @if($sewa->catatan_pengembalian)
                 <div class="alert alert-warning border mt-3">
-                    <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Catatan Dari Gudang (Pengembalian Barang)</h6>
+                    <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Catatan Pengembalian Barang</h6>
                     <p class="mb-0">{{ $sewa->catatan_pengembalian }}</p>
                 </div>
                 @endif
 
                 <div class="card-body">
-                    {{-- Informasi Penyewa (Data Diri Sendiri) --}}
+                    {{-- Informasi Penyewa --}}
                     <div class="alert alert-light border mb-4">
                         <div class="row">
                             <div class="col-md-6">
                                 <h6 class="fw-bold mb-2"><i class="bi bi-person-circle me-2"></i>Informasi Penyewa</h6>
                                 <table class="table table-borderless table-sm mb-0">
                                     <tr>
-                                        <th class="text-muted" width="40%">Nama</th>
+                                        <th class="text-muted" width="40%">Nama Penyewa</th>
                                         <td class="fw-semibold">{{ $sewa->user->name ?? '-' }}</td>
                                     </tr>
                                     <tr>
@@ -198,7 +198,54 @@
                         </div>
 
                         <div class="col-md-6 text-end align-self-end">
-                            {{-- Placeholder for future buttons if needed --}}
+                            @if (!in_array($sewa->status, ['selesai', 'dibatalkan', 'batal', 'expired']))
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#ubahStatusModal" data-id="{{ $sewa->id }}"
+                                data-status="{{ $sewa->status }}">
+                                Ubah Status
+                            </button>
+                            @endif
+
+                            <div class="modal fade" id="ubahStatusModal" tabindex="-1"
+                                aria-labelledby="ubahStatusModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <form id="ubahStatusForm" method="POST"
+                                            action="{{ route('admin.sewa.updateStatus') }}">
+                                            @csrf
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="ubahStatusModalLabel">Ubah Status Sewa</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+
+                                            <div class="modal-body">
+                                                <input type="hidden" name="id" id="sewaId">
+
+                                                <div class="mb-3">
+                                                    <label class="form-label">Status Baru</label>
+                                                    <select class="form-select" name="status" id="status">
+                                                        <option value="pending">Pending</option>
+                                                        <option value="disetujui">Disetujui (Lunas)</option>
+                                                        <option value="dibatalkan">Dibatalkan</option>
+                                                    </select>
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-info-circle"></i> 
+                                                        Status "Selesai" hanya bisa diubah oleh Warehouse saat barang dikembalikan.
+                                                    </small>
+                                                </div>
+                                            </div>
+
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-light"
+                                                    data-bs-dismiss="modal">Batal</button>
+                                                <button type="submit" class="btn btn-success">Simpan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
@@ -245,14 +292,65 @@
             </div>
 
             <div class="text-center mt-4">
-                <a href="{{ route('sewa.index') }}" class="btn btn-outline-secondary">
+                <a href="{{ route('admin.penyewaan') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Kembali ke Daftar
                 </a>
-                <a href="{{ route('sewa.invoice', $sewa->id) }}" class="btn btn-success" target="_blank">
+                <a href="{{ route('admin.sewa.invoice', $sewa->id) }}" class="btn btn-success" target="_blank">
                     <i class="bi bi-printer"></i> Cetak Invoice
                 </a>
             </div>
         </div>
     </main><!--End app-wrapper-->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ubahStatusModal = document.getElementById('ubahStatusModal');
+            const statusSelect = document.getElementById('status');
+
+            // Saat modal ditampilkan
+            ubahStatusModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const sewaId = button.getAttribute('data-id');
+                const status = button.getAttribute('data-status');
+
+                // Set data ke modal
+                document.getElementById('sewaId').value = sewaId;
+                statusSelect.value = status;
+
+                updateStatusColor(statusSelect.value);
+            });
+
+            // Saat pilihan status berubah, update warna preview label
+            statusSelect.addEventListener('change', function() {
+                updateStatusColor(this.value);
+            });
+
+            function updateStatusColor(status) {
+                const label = document.querySelector('#ubahStatusModalLabel');
+                label.className = 'modal-title fw-bold'; // reset dulu
+
+                switch (status) {
+                    case 'pending':
+                        label.classList.add('text-warning');
+                        break;
+                    case 'disetujui':
+                        label.classList.add('text-success');
+                        break;
+                    case 'berjalan':
+                        label.classList.add('text-info');
+                        break;
+                    case 'selesai':
+                        label.classList.add('text-primary');
+                        break;
+                    case 'dibatalkan':
+                        label.classList.add('text-danger');
+                        break;
+                    default:
+                        label.classList.add('text-muted');
+                }
+            }
+        });
+    </script>
+
+
 
 @endsection

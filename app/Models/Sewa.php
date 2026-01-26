@@ -26,10 +26,13 @@ class Sewa extends Model
         'no_rekening',
         'tgl_pembayaran',
         'bukti_pembayaran',
+        'snap_token',
+        'snap_token_pelunasan',
         'sisa_pembayaran',
         'batas_waktu_pembayaran',
         'status',
         'keterangan',
+        'catatan_pengembalian',
     ];
 
     // 🔗 Relasi

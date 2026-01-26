@@ -87,7 +87,8 @@
                                     <th>Jam Loading</th >
                                     <th>Tanggal Loading Out</th >
                                     <th>Total Biaya</th >
-                                    <th>Uang Muka</th >
+                                    <th>Uang Muka (DP)</th >
+                                    <th>Sisa Pembayaran</th >
                                     <th>Batas Konfirmasi</th >
                                     <th>Status</th >
                                     <th>Aksi</th>
@@ -105,43 +106,46 @@
                                         <td>{{ $row->tgl_loading }}</td>
                                         <td>{{ $row->jam_loading }}</td>
                                         <td>{{ $row->tgl_loading_out }}</td>
-                                        <td>{{ $row->total_biaya }}</td>
-                                        <td>{{ $row->uang_muka }}</td>
+                                        <td>Rp {{ number_format($row->total_biaya, 0, ',', '.') }}</td>
+                                        <td>Rp {{ number_format($row->uang_muka, 0, ',', '.') }}</td>
+                                        <td>Rp {{ number_format($row->sisa_pembayaran, 0, ',', '.') }}</td>
                                         <td>{{ $row->batas_waktu_pembayaran }}</td>
                                         <td>
-                                            @if(in_array($row->status, ['pending', 'disetujui', 'berjalan', 'selesai']))
-                                                @if ($row->status === 'pending')
-                                                    <span class="badge bg-danger">{{ $row->status }}</span>
-
-                                                @elseif ($row->status === 'disetujui')
-                                                    <span class="badge bg-success">{{ $row->status }}</span>
-
-                                                @elseif ($row->status === 'berjalan')
-                                                    <span class="badge bg-info">{{ $row->status }}</span>
-
-                                                @elseif ($row->status === 'selesai')
-                                                    <span class="badge bg-primary">{{ $row->status }}</span>
-                                                    
-                                                @endif
-                                            @elseif($row->status === 'belum bayar' && $row->batas_waktu_pembayaran)
+                                            @if($row->status === 'belum bayar')
                                                 <span class="badge bg-danger">Belum Bayar</span>
-                                                
+                                            @elseif($row->status === 'pending')
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            @elseif($row->status === 'dp_lunas')
+                                                <span class="badge bg-info">DP Lunas</span>
+                                            @elseif($row->status === 'disetujui')
+                                                <span class="badge bg-success">Disetujui (Lunas)</span>
+                                            @elseif($row->status === 'berjalan')
+                                                <span class="badge bg-primary">Berjalan</span>
+                                            @elseif($row->status === 'selesai')
+                                                <span class="badge bg-secondary">Selesai</span>
                                             @elseif($row->status === 'batal' || $row->status === 'dibatalkan')
-                                                <span class="badge bg-secondary">Batal</span>
+                                                <span class="badge bg-dark">Batal</span>
+                                            @elseif($row->status === 'expired')
+                                                <span class="badge bg-dark">Expired</span>
                                             @else
-                                                <span class="badge bg-secondary">Tidak diketahui</span>
+                                                <span class="badge bg-secondary">{{ $row->status }}</span>
                                             @endif
                                         </td>                                 
                                         <td>
-                                            @if (!in_array($row->status, ['pending', 'disetujui', 'berjalan', 'selesai']))
-                                            
-                                            <!-- tombol bayarnya -->
-                                            <form id="payment-form-{{ $row->id }}" onsubmit="payNow(event, {{ $row->id }})">
-                                                @csrf
-                                                <button type="submit" class="btn btn-primary btn-sm">Bayar</button>
-                                            </form>
-                                            @else
-                                                <span></span>
+                                            {{-- Tombol Bayar DP --}}
+                                            @if ($row->status === 'belum bayar')
+                                                <form id="payment-form-{{ $row->id }}" onsubmit="payNow(event, {{ $row->id }}, 'dp')">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-primary btn-sm">Bayar DP</button>
+                                                </form>
+                                            @endif
+
+                                            {{-- Tombol Pelunasan --}}
+                                            @if ($row->status === 'dp_lunas')
+                                                <form id="pelunasan-form-{{ $row->id }}" onsubmit="payNow(event, {{ $row->id }}, 'pelunasan')">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-success btn-sm">Pelunasan</button>
+                                                </form>
                                             @endif
 
                                             <a href="{{ route('sewa.show', $row->id) }}" class="btn btn-info btn-sm">Detail</a>
@@ -163,11 +167,14 @@
 <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
 
 <script>
-async function payNow(event, id) {
+async function payNow(event, id, type) {
     event.preventDefault();
 
+    // Tentukan URL berdasarkan tipe pembayaran
+    let url = type === 'pelunasan' ? `/payment/${id}/pelunasan` : `/payment/${id}`;
+
     try {
-        const response = await fetch(`/payment/${id}`, {
+        const response = await fetch(url, {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -196,7 +203,8 @@ async function payNow(event, id) {
                     location.reload();
                 },
                 onClose: function() {
-                    alert("Kamu menutup popup sebelum menyelesaikan pembayaran");
+                    // Tidak perlu alert, user bisa klik tombol lagi
+                    console.log("Popup ditutup tanpa menyelesaikan pembayaran");
                 }
             });
         } else {

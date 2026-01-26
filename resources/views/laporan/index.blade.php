@@ -3,72 +3,146 @@
 @section('content')
 
 <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
-    <main class="app-wrapper">
-        <div class="container-fluid">
+<main class="app-wrapper">
+    <div class="container-fluid">
 
-            <div class="main-breadcrumb d-flex align-items-center my-3 position-relative">
-                <h2 class="breadcrumb-title mb-0 flex-grow-1 fs-14">{{ $title }}</h2>
-                <div class="flex-shrink-0">
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb justify-content-end mb-0">
-                            <li class="breadcrumb-item"><a href="javascript:void(0)">Pages</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
-                        </ol>
-                    </nav>
+        {{-- Header --}}
+        <div class="d-flex align-items-center justify-content-between my-4">
+            <div>
+                <h3 class="fw-bold mb-1">Laporan Bisnis</h3>
+                <p class="text-muted mb-0">Filter dan export laporan transaksi penyewaan.</p>
+            </div>
+        </div>
+
+        {{-- Filter Card --}}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <form action="{{ route('laporan.index') }}" method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-uppercase">Tanggal Awal</label>
+                        <input class="form-control" type="date" name="tanggal_awal" value="{{ request('tanggal_awal') }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-uppercase">Tanggal Akhir</label>
+                        <input class="form-control" type="date" name="tanggal_akhir" value="{{ request('tanggal_akhir') }}" required>
+                    </div>
+                    <div class="col-md-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-filter me-1"></i> Tampilkan Laporan
+                        </button>
+                        @if(request('tanggal_awal') && count($sewas))
+                            <a href="{{ route('laporan.export.pdf', request()->query()) }}" class="btn btn-danger">
+                                <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
+                            </a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if(request('tanggal_awal') && request('tanggal_akhir'))
+            
+            {{-- Summary Cards --}}
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white border-0 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="text-uppercase small md-1 opacity-75">Total Transaksi</h6>
+                            <h3 class="fw-bold mb-0">{{ $summary['total_transaksi'] }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white border-0 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="text-uppercase small md-1 opacity-75">Total Pendapatan</h6>
+                            <h3 class="fw-bold mb-0">Rp {{ number_format($summary['total_pendapatan'], 0, ',', '.') }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                     <div class="card bg-white border-0 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="text-uppercase small md-1 text-muted">Aktivitas Periode</h6>
+                            <div class="fw-bold text-dark">{{ \Carbon\Carbon::parse(request('tanggal_awal'))->format('d M') }} - {{ \Carbon\Carbon::parse(request('tanggal_akhir'))->format('d M Y') }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            @if(session('success'))
-              <div class="alert alert-subtle-success d-flex align-items-center mb-2" id="success-alert" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i>
-                {{ session('success') }}
-              </div>
-              <script>
-              // Auto hide setelah 3 detik
-              setTimeout(function() {
-                  var alert = document.getElementById('success-alert');
-                  if (alert) {
-                      var bsAlert = new bootstrap.Alert(alert);
-                      bsAlert.close();
-                  }
-              }, 3000);
-          </script>
-          @endif
 
-          @if(session('error'))
-            <div class="alert alert-subtle-danger d-flex align-items-center mb-2" id="error-alert" role="alert">
-                <i class="bi bi-x-circle-fill me-2"></i>
-                {{ session('error') }}
-            </div>
-            <script>
-                // Auto hide setelah 3 detik
-                setTimeout(function() {
-                    var alert = document.getElementById('error-alert');
-                    if (alert) {
-                        var bsAlert = new bootstrap.Alert(alert);
-                        bsAlert.close();
-                    }
-                }, 3000);
-            </script>
-          @endif
-
-            <div class="col-12">
-                
-                <form action="{{ route('laporan.index') }}" method="GET" class="mb-5">
-                    <div class="mb-3">
-                        <input class="form-control" type="date" name="tanggal_awal" required>
+            {{-- Result Table --}}
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title fw-bold mb-0">Rincian Transaksi</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">No</th>
+                                    <th>Kode Sewa</th>
+                                    <th>Tanggal Sewa</th>
+                                    <th>Pelanggan</th>
+                                    <th>Barang</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-4">Total Biaya</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($sewas as $sewa)
+                                <tr>
+                                    <td class="ps-4">{{ $loop->iteration }}</td>
+                                    <td>
+                                        <span class="fw-bold">{{ $sewa->kode_sewa }}</span>
+                                    </td>
+                                    <td>{{ \Carbon\Carbon::parse($sewa->tgl_sewa)->format('d/m/Y') }}</td>
+                                    <td>
+                                        {{ $sewa->user->name ?? 'Deleted User' }}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                        @foreach($sewa->detailSewas as $d)
+                                            • {{ $d->barang->nama_barang ?? '-' }} ({{ $d->qty }})<br>
+                                        @endforeach
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">
+                                            {{ ucfirst($sewa->status) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4 fw-bold">Rp {{ number_format($sewa->total_biaya, 0, ',', '.') }}</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-search fs-1 d-block mb-3"></i>
+                                        Tidak ada data yang ditemukan pada periode ini.
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                            @if(count($sewas))
+                            <tfoot>
+                                <tr class="bg-light fw-bold">
+                                    <td colspan="6" class="text-end pe-3 py-3">TOTAL PENDAPATAN PERIODE INI</td>
+                                    <td class="text-end pe-4 py-3 text-success fs-6">Rp {{ number_format($sewas->sum('total_biaya'), 0, ',', '.') }}</td>
+                                </tr>
+                            </tfoot>
+                            @endif
+                        </table>
                     </div>
-                    <div class="mb-3">
-                        <input class="form-control" type="date" name="tanggal_akhir" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Filter</button>
-                </form>
-
-                @if(count($sewas))
-                    <a href="{{ route('laporan.export.pdf', request()->query()) }}" class="btn btn-success">Export PDF</a>
-                @endif
-                
+                </div>
             </div>
-        </div><!--End container-fluid-->
-    </main><!--End app-wrapper-->
+            
+        @else
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-calendar-range fs-1 d-block mb-3"></i>
+                <p>Silakan pilih rentang tanggal untuk melihat laporan.</p>
+            </div>
+        @endif
 
+    </div>
+</main>
 @endsection

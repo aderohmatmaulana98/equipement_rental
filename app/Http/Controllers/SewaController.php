@@ -17,7 +17,18 @@ class SewaController extends Controller
     public function index()
     {
         $title = 'Sewa Barang';
-        $sewas = Sewa::where('id_user', auth()->user()->id)->get();
+        
+        // Auto-update status expired untuk sewa yang sudah lewat batas waktu pembayaran
+        Sewa::where('id_user', auth()->id())
+            ->where('status', 'belum bayar')
+            ->whereNotNull('batas_waktu_pembayaran')
+            ->where('batas_waktu_pembayaran', '<', now())
+            ->update(['status' => 'expired']);
+        
+        $sewas = Sewa::where('id_user', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
         return view('sewa.index', compact('title', 'sewas'));
     }
 
@@ -131,15 +142,20 @@ class SewaController extends Controller
         try {
             $kodeSewa = 'SEWA-' . date('Ymd') . '-' . str_pad(Sewa::count() + 1, 3, '0', STR_PAD_LEFT).'-'.uniqid();
 
-            $tglSewa = Carbon::parse($request->tgl_sewa);
+            $tglAcara = Carbon::parse($request->tgl_acara);
             $tglLoadingOut = Carbon::parse($request->tgl_loading_out);
 
-            // Hitung durasi hari sewa (minimal 1 hari)
-            $durasiHari = $tglSewa->diffInDays($tglLoadingOut);
+            // Hitung durasi hari sewa dari tgl_acara sampai tgl_loading_out (minimal 1 hari)
+            $durasiHari = $tglAcara->diffInDays($tglLoadingOut);
             $durasiHari = $durasiHari > 0 ? $durasiHari : 1;
 
-            // Hitung total harga dari keranjang
-            $totalHarga = collect($cart)->sum(fn($item) => $item['harga'] * $item['qty']);
+            // Hitung total harga dari keranjang: harga × qty × durasi
+            $subtotalBarang = collect($cart)->sum(fn($item) => $item['harga'] * $item['qty']);
+            $totalBiaya = $subtotalBarang * $durasiHari;
+            
+            // DP = 50% dari total biaya
+            $uangMuka = $totalBiaya * 0.5;
+            $sisaPembayaran = $totalBiaya - $uangMuka;
 
             // Buat data sewa
             $sewa = Sewa::create([
@@ -152,8 +168,9 @@ class SewaController extends Controller
                 'tgl_loading_out' => $request->tgl_loading_out,
                 'alamat_acara' => $request->alamat_acara,
                 'batas_waktu_pembayaran' => now()->addHour(),
-                'total_biaya' => $totalHarga * $durasiHari,
-                'uang_muka' => $totalHarga * 0.5,
+                'total_biaya' => $totalBiaya,
+                'uang_muka' => $uangMuka,
+                'sisa_pembayaran' => $sisaPembayaran,
                 'status' => 'belum bayar',
                 'id_user' => auth()->id(),
             ]);
@@ -165,7 +182,7 @@ class SewaController extends Controller
                     'id_barang' => $item['id'],
                     'qty' => $item['qty'],
                     'harga_satuan' => $item['harga'],
-                    'subtotal' => $item['harga'] * $item['qty'] * $durasiHari, // ✅ per item × durasi
+                    'subtotal' => $item['harga'] * $item['qty'] * $durasiHari,
                 ]);
             }
 
@@ -190,7 +207,7 @@ class SewaController extends Controller
         $sewa = Sewa::findOrFail($id);
         $detailSewa = DetailSewa::with('barang')->where('id_sewa', $sewa->id)->get();
 
-        return view('user.detail_sewa', compact('detailSewa',  'title'));
+        return view('user.detail_sewa', compact('detailSewa', 'title', 'sewa'));
     }
 
     /**
@@ -234,5 +251,24 @@ class SewaController extends Controller
         ]);
 
         return redirect()->route('sewa.index')->with('success', 'Data konfirmasi berhasil disimpan.');
+    }
+
+    public function printInvoice($id)
+    {
+        $sewa = Sewa::with('user')->findOrFail($id);
+
+        // Pastikan hanya user bersangkutan yang bisa cetak invoice
+        if ($sewa->id_user !== auth()->id()) {
+            abort(403);
+        }
+
+        $detailSewa = DetailSewa::with('barang')->where('id_sewa', $sewa->id)->get();
+        
+        // Hitung status pembayaran
+        $isLunas = in_array($sewa->status, ['disetujui', 'berjalan', 'selesai']);
+        $isDPLunas = $sewa->status === 'dp_lunas';
+        $sudahBayar = $isLunas ? $sewa->total_biaya : ($isDPLunas ? $sewa->uang_muka : 0);
+        
+        return view('user.invoice_sewa', compact('sewa', 'detailSewa', 'isLunas', 'isDPLunas', 'sudahBayar'));
     }
 }
