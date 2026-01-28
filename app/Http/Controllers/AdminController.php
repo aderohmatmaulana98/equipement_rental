@@ -292,6 +292,8 @@ class AdminController extends Controller
             'barang_id' => 'required|array|min:1',
             'qty' => 'required|array',
             'status_pembayaran' => 'required|in:belum_bayar,dp_lunas,lunas',
+            'diskon_tipe' => 'nullable|in:persen,nominal',
+            'diskon_nilai' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();
@@ -305,8 +307,8 @@ class AdminController extends Controller
             // Tanggal sama = 1 hari, tanggal 11 ke 12 = 2 hari, dst.
             $durasiHari = $tglAcara->diffInDays($tglLoadingOut) + 1;
 
-            // Hitung total dari barang
-            $totalBiaya = 0;
+            // Hitung total dari barang (sebelum diskon)
+            $totalSebelumDiskon = 0;
             $detailItems = [];
             
             foreach ($request->barang_id as $index => $barangId) {
@@ -318,7 +320,7 @@ class AdminController extends Controller
                 }
                 
                 $subtotal = $barang->harga * $qty * $durasiHari;
-                $totalBiaya += $subtotal;
+                $totalSebelumDiskon += $subtotal;
                 
                 $detailItems[] = [
                     'id_barang' => $barangId,
@@ -326,6 +328,24 @@ class AdminController extends Controller
                     'harga_satuan' => $barang->harga,
                     'subtotal' => $subtotal,
                 ];
+            }
+
+            // Hitung diskon
+            $diskonPersen = null;
+            $diskonNominal = null;
+            $totalBiaya = $totalSebelumDiskon;
+            
+            if ($request->filled('diskon_nilai') && $request->diskon_nilai > 0) {
+                if ($request->diskon_tipe === 'persen') {
+                    $diskonPersen = min((int) $request->diskon_nilai, 100); // Max 100%
+                    $diskonNominal = ($totalSebelumDiskon * $diskonPersen) / 100;
+                } else {
+                    $diskonNominal = (float) $request->diskon_nilai;
+                    if ($diskonNominal > $totalSebelumDiskon) {
+                        $diskonNominal = $totalSebelumDiskon; // Diskon tidak boleh lebih dari total
+                    }
+                }
+                $totalBiaya = $totalSebelumDiskon - $diskonNominal;
             }
 
             $uangMuka = $totalBiaya * 0.5;
@@ -350,6 +370,9 @@ class AdminController extends Controller
                 'tgl_loading_out' => $request->tgl_loading_out,
                 'alamat_acara' => $request->alamat_acara,
                 'batas_waktu_pembayaran' => now()->addDay(),
+                'total_sebelum_diskon' => $totalSebelumDiskon,
+                'diskon_persen' => $diskonPersen,
+                'diskon_nominal' => $diskonNominal,
                 'total_biaya' => $totalBiaya,
                 'uang_muka' => $uangMuka,
                 'sisa_pembayaran' => $sisaPembayaran,

@@ -31,7 +31,11 @@ class CartController extends Controller
             $cart[$barang->id] = [
                 'id' => $barang->id,
                 'nama_barang' => $barang->nama_barang,
-                'harga' => $barang->harga,
+                'harga_asli' => $barang->harga,
+                'harga' => $barang->getHargaDiskon(), // Use discounted price
+                'has_diskon' => $barang->isDiskonAktif(),
+                'diskon_persen' => $barang->diskon_persen,
+                'diskon_nominal' => $barang->diskon_nominal,
                 'stok' => $barang->stok,
                 'qty' => $qty,
             ];

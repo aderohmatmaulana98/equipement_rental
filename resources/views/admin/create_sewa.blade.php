@@ -144,18 +144,45 @@
                         </button>
 
                         <hr>
+                        <h6 class="fw-bold mb-3"><i class="bi bi-percent me-2"></i>Diskon (Opsional)</h6>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Tipe Diskon</label>
+                                <select name="diskon_tipe" class="form-select" id="diskon_tipe">
+                                    <option value="">-- Tanpa Diskon --</option>
+                                    <option value="persen" {{ old('diskon_tipe') == 'persen' ? 'selected' : '' }}>Persen (%)</option>
+                                    <option value="nominal" {{ old('diskon_tipe') == 'nominal' ? 'selected' : '' }}>Nominal (Rp)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Nilai Diskon</label>
+                                <input type="number" name="diskon_nilai" class="form-control" id="diskon_nilai" 
+                                       value="{{ old('diskon_nilai') }}" min="0" placeholder="Masukkan nilai diskon">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Preview Diskon</label>
+                                <div class="form-control bg-light" id="previewDiskon">- Rp 0</div>
+                            </div>
+                        </div>
+
+                        <hr>
 
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="alert alert-secondary">
-                                    <strong>Estimasi Total:</strong> 
-                                    <span class="fs-5 text-primary" id="estimasiTotal">Rp 0</span>
+                                <div class="alert alert-secondary mb-2">
+                                    <strong>Subtotal (Sebelum Diskon):</strong> 
+                                    <span class="fs-6" id="subtotalSebelumDiskon">Rp 0</span>
+                                </div>
+                                <div class="alert alert-success">
+                                    <strong>Total Setelah Diskon:</strong> 
+                                    <span class="fs-5 text-success fw-bold" id="estimasiTotal">Rp 0</span>
                                     <br>
                                     <small class="text-muted">DP (50%): <span id="estimasiDP">Rp 0</span></small>
                                 </div>
                             </div>
-                            <div class="col-md-6 text-end">
-                                <a href="{{ route('admin.penyewaan') }}" class="btn btn-secondary">
+                            <div class="col-md-6 text-end d-flex align-items-end justify-content-end">
+                                <a href="{{ route('admin.penyewaan') }}" class="btn btn-secondary me-2">
                                     <i class="bi bi-arrow-left me-1"></i> Batal
                                 </a>
                                 <button type="submit" class="btn btn-success">
@@ -218,6 +245,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.qty-input').forEach(el => el.addEventListener('input', calculateTotal));
     tglAcara.addEventListener('change', updateDurasi);
     tglLoadingOut.addEventListener('change', updateDurasi);
+    
+    // Diskon event listeners
+    const diskonTipe = document.getElementById('diskon_tipe');
+    const diskonNilai = document.getElementById('diskon_nilai');
+    diskonTipe.addEventListener('change', calculateTotal);
+    diskonNilai.addEventListener('input', calculateTotal);
 
     function updateDurasi() {
         const acara = new Date(tglAcara.value);
@@ -225,8 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (tglAcara.value && tglLoadingOut.value && loadingOut >= acara) {
             const diffTime = Math.abs(loadingOut - acara);
-            let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            diffDays = diffDays > 0 ? diffDays : 1;
+            // Durasi inklusif: tanggal sama = 1 hari, 11 ke 12 = 2 hari
+            let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
             
             durasiHari.textContent = diffDays;
             durasiInfo.style.display = 'block';
@@ -243,19 +276,38 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (tglAcara.value && tglLoadingOut.value && loadingOut >= acara) {
             const diffTime = Math.abs(loadingOut - acara);
-            durasi = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            durasi = durasi > 0 ? durasi : 1;
+            // Durasi inklusif: tanggal sama = 1 hari, 11 ke 12 = 2 hari
+            durasi = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
         }
 
-        let total = 0;
+        // Hitung subtotal (sebelum diskon)
+        let subtotal = 0;
         document.querySelectorAll('.barang-item').forEach(item => {
             const select = item.querySelector('.barang-select');
             const qty = parseInt(item.querySelector('.qty-input').value) || 0;
             const harga = parseInt(select.options[select.selectedIndex]?.dataset?.harga) || 0;
             
-            total += harga * qty * durasi;
+            subtotal += harga * qty * durasi;
         });
 
+        // Hitung diskon
+        let diskon = 0;
+        const tipe = diskonTipe.value;
+        const nilai = parseFloat(diskonNilai.value) || 0;
+        
+        if (tipe === 'persen' && nilai > 0) {
+            const persen = Math.min(nilai, 100); // Max 100%
+            diskon = (subtotal * persen) / 100;
+        } else if (tipe === 'nominal' && nilai > 0) {
+            diskon = Math.min(nilai, subtotal); // Tidak lebih dari subtotal
+        }
+
+        // Total setelah diskon
+        const total = subtotal - diskon;
+
+        // Update tampilan
+        document.getElementById('subtotalSebelumDiskon').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
+        document.getElementById('previewDiskon').textContent = '- Rp ' + diskon.toLocaleString('id-ID');
         document.getElementById('estimasiTotal').textContent = 'Rp ' + total.toLocaleString('id-ID');
         document.getElementById('estimasiDP').textContent = 'Rp ' + (total * 0.5).toLocaleString('id-ID');
     }

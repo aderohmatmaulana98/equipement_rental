@@ -438,6 +438,16 @@
         <!-- Summary -->
         <div class="invoice-summary">
             <table class="summary-table">
+                @if($sewa->diskon_nominal && $sewa->diskon_nominal > 0)
+                <tr>
+                    <td>Subtotal</td>
+                    <td>Rp {{ number_format($sewa->total_sebelum_diskon, 0, ',', '.') }}</td>
+                </tr>
+                <tr style="color: #28a745;">
+                    <td>Diskon {{ $sewa->diskon_persen ? '(' . $sewa->diskon_persen . '%)' : '' }}</td>
+                    <td>- Rp {{ number_format($sewa->diskon_nominal, 0, ',', '.') }}</td>
+                </tr>
+                @endif
                 <tr class="subtotal">
                     <td>Total Biaya</td>
                     <td>Rp {{ number_format($sewa->total_biaya, 0, ',', '.') }}</td>

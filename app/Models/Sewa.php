@@ -33,6 +33,9 @@ class Sewa extends Model
         'status',
         'keterangan',
         'catatan_pengembalian',
+        'diskon_persen',
+        'diskon_nominal',
+        'total_sebelum_diskon',
     ];
 
     // 🔗 Relasi

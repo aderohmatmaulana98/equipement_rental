@@ -116,6 +116,30 @@
                                                 <label for="gambar" class="col-form-label">Gambar:</label>
                                                 <input type="file" class="form-control" id="gambar" name="gambar">
                                             </div>
+                                            
+                                            <hr>
+                                            <h6 class="fw-bold text-primary"><i class="bi bi-percent me-1"></i>Diskon (Opsional)</h6>
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="col-form-label">Diskon Persen (%):</label>
+                                                    <input type="number" class="form-control" name="diskon_persen" min="0" max="100" placeholder="0">
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="col-form-label">Diskon Nominal (Rp):</label>
+                                                    <input type="number" class="form-control" name="diskon_nominal" min="0" placeholder="0">
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="col-form-label">Mulai Promo:</label>
+                                                    <input type="date" class="form-control" name="diskon_mulai">
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="col-form-label">Sampai Promo:</label>
+                                                    <input type="date" class="form-control" name="diskon_sampai">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">*Isi salah satu: Diskon Persen ATAU Diskon Nominal. Kosongkan periode untuk promo tanpa batas waktu.</small>
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -215,6 +239,30 @@
                                                                 <div class="mb-3">
                                                                     <img src="{{ asset('storage/' . $row->gambar) }}" alt="gambar" height="100">
                                                                 </div>
+                                                                
+                                                                <hr>
+                                                                <h6 class="fw-bold text-primary"><i class="bi bi-percent me-1"></i>Diskon (Opsional)</h6>
+                                                                <div class="row">
+                                                                    <div class="col-md-6 mb-3">
+                                                                        <label class="col-form-label">Diskon Persen (%):</label>
+                                                                        <input type="number" class="form-control" name="diskon_persen" min="0" max="100" value="{{ $row->diskon_persen }}" placeholder="0">
+                                                                    </div>
+                                                                    <div class="col-md-6 mb-3">
+                                                                        <label class="col-form-label">Diskon Nominal (Rp):</label>
+                                                                        <input type="number" class="form-control" name="diskon_nominal" min="0" value="{{ $row->diskon_nominal }}" placeholder="0">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="col-md-6 mb-3">
+                                                                        <label class="col-form-label">Mulai Promo:</label>
+                                                                        <input type="date" class="form-control" name="diskon_mulai" value="{{ $row->diskon_mulai ? $row->diskon_mulai->format('Y-m-d') : '' }}">
+                                                                    </div>
+                                                                    <div class="col-md-6 mb-3">
+                                                                        <label class="col-form-label">Sampai Promo:</label>
+                                                                        <input type="date" class="form-control" name="diskon_sampai" value="{{ $row->diskon_sampai ? $row->diskon_sampai->format('Y-m-d') : '' }}">
+                                                                    </div>
+                                                                </div>
+                                                                <small class="text-muted">*Isi salah satu: Diskon Persen ATAU Diskon Nominal.</small>
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

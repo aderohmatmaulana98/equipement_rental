@@ -35,6 +35,10 @@ class BarangController extends Controller
             'keterangan' => 'nullable|string',
             'stok' => 'required|integer|min:0',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'diskon_persen' => 'nullable|integer|min:0|max:100',
+            'diskon_nominal' => 'nullable|numeric|min:0',
+            'diskon_mulai' => 'nullable|date',
+            'diskon_sampai' => 'nullable|date|after_or_equal:diskon_mulai',
         ]);
 
         $path = null;
@@ -50,6 +54,10 @@ class BarangController extends Controller
             'keterangan' => $request->keterangan,
             'stok' => $request->stok,
             'gambar' => $path,
+            'diskon_persen' => $request->diskon_persen,
+            'diskon_nominal' => $request->diskon_nominal,
+            'diskon_mulai' => $request->diskon_mulai,
+            'diskon_sampai' => $request->diskon_sampai,
         ]);
 
         return redirect()->route('barang.index')->with('success', 'Barang berhasil ditambahkan.');
@@ -75,6 +83,10 @@ class BarangController extends Controller
             'keterangan' => 'nullable|string',
             'stok' => 'required|integer|min:0',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'diskon_persen' => 'nullable|integer|min:0|max:100',
+            'diskon_nominal' => 'nullable|numeric|min:0',
+            'diskon_mulai' => 'nullable|date',
+            'diskon_sampai' => 'nullable|date|after_or_equal:diskon_mulai',
         ]);
 
         if ($request->hasFile('gambar')) {
@@ -94,6 +106,10 @@ class BarangController extends Controller
             'keterangan' => $request->keterangan,
             'stok' => $request->stok,
             'gambar' => $path,
+            'diskon_persen' => $request->diskon_persen,
+            'diskon_nominal' => $request->diskon_nominal,
+            'diskon_mulai' => $request->diskon_mulai,
+            'diskon_sampai' => $request->diskon_sampai,
         ]);
 
         return redirect()->route('barang.index')->with('success', 'Barang berhasil diperbarui.');

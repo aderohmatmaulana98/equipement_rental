@@ -89,9 +89,29 @@
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td>{{ $row->jenis_barang }}</td>
-                                        <td>{{ $row->nama_barang }}</td>
+                                        <td>
+                                            {{ $row->nama_barang }}
+                                            @if($row->isDiskonAktif())
+                                                <span class="badge bg-danger ms-1">PROMO</span>
+                                            @endif
+                                        </td>
                                         <td>{{ $row->satuan }}</td>
-                                        <td>{{ $row->harga }}</td>
+                                        <td>
+                                            @if($row->isDiskonAktif())
+                                                <del class="text-muted">Rp {{ number_format($row->harga, 0, ',', '.') }}</del>
+                                                <br>
+                                                <span class="text-success fw-bold">Rp {{ number_format($row->getHargaDiskon(), 0, ',', '.') }}</span>
+                                                <small class="text-danger">
+                                                    @if($row->diskon_persen)
+                                                        (-{{ $row->diskon_persen }}%)
+                                                    @else
+                                                        (-Rp {{ number_format($row->diskon_nominal, 0, ',', '.') }})
+                                                    @endif
+                                                </small>
+                                            @else
+                                                Rp {{ number_format($row->harga, 0, ',', '.') }}
+                                            @endif
+                                        </td>
                                         <td>{{ $row->keterangan }}</td>
                                         <td>{{ $row->stok }}</td>
                                         <td>

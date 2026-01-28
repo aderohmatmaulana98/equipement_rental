@@ -136,6 +136,16 @@
                             @endphp
                             
                             <table class="table table-sm">
+                                @if($sewa->diskon_nominal && $sewa->diskon_nominal > 0)
+                                <tr>
+                                    <th>Subtotal</th>
+                                    <td>Rp {{ number_format($sewa->total_sebelum_diskon, 0, ',', '.') }}</td>
+                                </tr>
+                                <tr class="text-success">
+                                    <th>Diskon {{ $sewa->diskon_persen ? '(' . $sewa->diskon_persen . '%)' : '' }}</th>
+                                    <td>- Rp {{ number_format($sewa->diskon_nominal, 0, ',', '.') }}</td>
+                                </tr>
+                                @endif
                                 <tr>
                                     <th>Total Biaya</th>
                                     <td>Rp {{ number_format($sewa->total_biaya, 0, ',', '.') }}</td>
