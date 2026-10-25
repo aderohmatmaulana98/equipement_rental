@@ -4,9 +4,9 @@
         <div class="container-fluid w-100">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-inline-flex align-items-center gap-2">
-                    <a href="index.html" class="align-items-end logo-main d-none me-5">
-                        <img height="35" width="34" class="logo-dark" alt="Dark Logo" src="{{ asset('assets/images/logo-md.png')}}">
-                        <h3 class="text-body-emphasis fw-bolder mb-0 ms-1">Urbix</h3>
+                    <a href="#" class="align-items-center logo-main d-none me-5">
+                        <img height="35" width="35" class="logo-dark" alt="Citra Wiwara Logo" src="{{ asset('assets/images/logo-md.png')}}">
+                        <h3 class="text-body-emphasis fw-bolder mb-0 ms-2">Citra Wiwara</h3>
                     </a>
                     <button type="button" class="vertical-toggle btn header-btn" id="toggleSidebar" aria-label="Toggle Sidebar">
                         <i class="bi bi-arrow-bar-left header-icon"></i>

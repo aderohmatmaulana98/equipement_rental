@@ -22,6 +22,15 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Data sewa atau user tidak ditemukan'], 404);
         }
 
+        // Cek ketersediaan stok barang sebelum memproses pembayaran DP
+        foreach ($sewa->detailSewas as $ds) {
+            $b = Barang::find($ds->id_barang);
+            if (!$b || $b->stok < $ds->qty) {
+                $nama = $b ? $b->nama_barang : 'Barang';
+                return response()->json(['error' => "Maaf, stok {$nama} tidak mencukupi (sisa: " . ($b ? $b->stok : 0) . ")."], 400);
+            }
+        }
+
         // Cek apakah sudah ada snap_token yang masih valid (belum expired)
         // Token Midtrans expired setelah 24 jam, tapi kita set batas 1 jam di batas_waktu_pembayaran
         if ($sewa->snap_token && $sewa->batas_waktu_pembayaran && now()->lt($sewa->batas_waktu_pembayaran)) {
@@ -90,14 +99,14 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Status sewa harus DP Lunas untuk melakukan pelunasan'], 400);
         }
 
-        // Cek apakah sudah ada snap_token pelunasan yang masih valid
-        if ($sewa->snap_token_pelunasan && $sewa->batas_waktu_pembayaran && now()->lt($sewa->batas_waktu_pembayaran)) {
+        // Cek apakah sudah ada snap_token pelunasan yang tersimpan
+        if ($sewa->snap_token_pelunasan) {
             return response()->json(['snapToken' => $sewa->snap_token_pelunasan]);
         }
 
         // Set Midtrans config
         \Midtrans\Config::$serverKey = config('midtrans.server_key');
-        \Midtrans\Config::$isProduction = false;
+        \Midtrans\Config::$isProduction = config('midtrans.is_production', false);
         \Midtrans\Config::$isSanitized = true;
         \Midtrans\Config::$is3ds = true;
 
@@ -130,10 +139,9 @@ class PaymentController extends Controller
         try {
             $snapToken = \Midtrans\Snap::getSnapToken($params);
             
-            // Simpan snap_token pelunasan dan update batas waktu
+            // Simpan snap_token pelunasan
             $sewa->update([
                 'snap_token_pelunasan' => $snapToken,
-                'batas_waktu_pembayaran' => now()->addHour(),
             ]);
 
             return response()->json(['snapToken' => $snapToken]);
@@ -143,85 +151,109 @@ class PaymentController extends Controller
     }
 
     /**
+     * Proses update status pembayaran berdasarkan order_id dari Midtrans
+     */
+    public static function processPaymentStatus($orderId, $transactionStatus = null, $fraudStatus = null)
+    {
+        \Midtrans\Config::$serverKey = config('midtrans.server_key');
+        \Midtrans\Config::$isProduction = config('midtrans.is_production', false);
+
+        // Jika status belum pasti, verifikasi langsung ke server Midtrans via status API
+        if (!$transactionStatus || $transactionStatus === 'pending') {
+            try {
+                $status = \Midtrans\Transaction::status($orderId);
+                $transactionStatus = $status->transaction_status ?? $transactionStatus;
+                $fraudStatus = $status->fraud_status ?? $fraudStatus;
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Midtrans status check error for {$orderId}: " . $e->getMessage());
+            }
+        }
+
+        $isLunas = str_contains($orderId, '-LUNAS-');
+        $kodeSewa = preg_replace('/-(DP|LUNAS)-\d+$/', '', $orderId);
+        
+        $sewa = Sewa::where('kode_sewa', $kodeSewa)->first();
+
+        if (!$sewa) {
+            return false;
+        }
+
+        // Handle transaksi sukses (capture atau settlement)
+        if ($transactionStatus == 'capture' || $transactionStatus == 'settlement') {
+            if ($fraudStatus == 'challenge') {
+                return false;
+            }
+
+            if ($isLunas) {
+                // Pelunasan berhasil
+                if ($sewa->status !== 'disetujui') {
+                    $previousStatus = $sewa->status;
+                    $sewa->update([
+                        'status' => 'disetujui',
+                        'sisa_pembayaran' => 0,
+                        'tgl_pembayaran' => now(),
+                        'snap_token_pelunasan' => null,
+                    ]);
+                    $sewa->adjustStockForStatusChange($previousStatus, 'disetujui');
+                }
+            } else {
+                // DP berhasil
+                if ($sewa->status === 'belum bayar') {
+                    $previousStatus = $sewa->status;
+                    $sewa->update([
+                        'status' => 'dp_lunas',
+                        'tgl_pembayaran' => now(),
+                        'snap_token' => null,
+                        'batas_waktu_pembayaran' => $sewa->tgl_loading 
+                            ? $sewa->tgl_loading . ' ' . ($sewa->jam_loading ?? '08:00:00') 
+                            : now()->addDays(7),
+                    ]);
+
+                    $sewa->adjustStockForStatusChange($previousStatus, 'dp_lunas');
+                }
+            }
+
+            return $sewa->fresh();
+
+        } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
+            // Transaksi gagal - clear token
+            if ($isLunas) {
+                $sewa->update(['snap_token_pelunasan' => null]);
+            } else {
+                $previousStatus = $sewa->status;
+                $sewa->update(['snap_token' => null]);
+                if ($sewa->status === 'belum bayar') {
+                    $sewa->update(['status' => 'batal']);
+                    $sewa->adjustStockForStatusChange($previousStatus, 'batal');
+                }
+            }
+            return $sewa->fresh();
+        }
+
+        return $sewa;
+    }
+
+    /**
      * Callback dari Midtrans
      */
     public function callback(Request $request)
     {
-        \Midtrans\Config::$serverKey = config('midtrans.server_key');
-        \Midtrans\Config::$isProduction = false;
-
         try {
             $notif = new \Midtrans\Notification();
 
             $transaction = $notif->transaction_status;
             $orderId = $notif->order_id;
-            $type = $notif->payment_type;
             $fraudStatus = $notif->fraud_status ?? null;
 
-            // Extract kode_sewa dari order_id (format: KODE_SEWA-DP-timestamp atau KODE_SEWA-LUNAS-timestamp)
-            // Contoh: SEWA-20260125-001-abc123-DP-1737817200
-            $isLunas = str_contains($orderId, '-LUNAS-');
-            
-            // Ambil kode_sewa dengan menghapus suffix -DP-xxx atau -LUNAS-xxx
-            $kodeSewa = preg_replace('/-(DP|LUNAS)-\d+$/', '', $orderId);
-            
-            $sewa = Sewa::where('kode_sewa', $kodeSewa)->first();
+            $sewa = self::processPaymentStatus($orderId, $transaction, $fraudStatus);
 
             if (!$sewa) {
-                return response()->json(['message' => 'Data sewa tidak ditemukan'], 404);
-            }
-
-            // Handle berbagai status transaksi
-            if ($transaction == 'capture' || $transaction == 'settlement') {
-                if ($fraudStatus == 'challenge') {
-                    // Transaksi perlu review, jangan ubah status
-                    return response()->json(['message' => 'Transaction needs review', 'order_id' => $orderId]);
-                }
-                
-                if ($isLunas) {
-                    // Pelunasan berhasil
-                    $sewa->update([
-                        'status' => 'disetujui',
-                        'sisa_pembayaran' => 0,
-                        'tgl_pembayaran' => now(),
-                        'snap_token_pelunasan' => null, // Clear token setelah sukses
-                    ]);
-                    
-                } else {
-                    // DP berhasil
-                    $sewa->update([
-                        'status' => 'dp_lunas',
-                        'tgl_pembayaran' => now(),
-                        'snap_token' => null, // Clear token setelah sukses
-                    ]);
-                    
-                    // Kurangi stok barang (hanya saat DP berhasil, bukan saat pelunasan)
-                    $detailSewa = DetailSewa::where('id_sewa', $sewa->id)->get();
-                    foreach ($detailSewa as $ds) {
-                        Barang::where('id', $ds->id_barang)->decrement('stok', $ds->qty);
-                    }
-                }
-                
-            } elseif ($transaction == 'pending') {
-                // Tidak perlu ubah status, masih menunggu pembayaran
-                
-            } elseif (in_array($transaction, ['deny', 'expire', 'cancel'])) {
-                // Transaksi gagal - clear token supaya bisa buat baru
-                if ($isLunas) {
-                    $sewa->update(['snap_token_pelunasan' => null]);
-                } else {
-                    $sewa->update(['snap_token' => null]);
-                }
-
-                // Jika DP expire/cancel dan status masih belum bayar, set status batal
-                if (!$isLunas && $sewa->status === 'belum bayar') {
-                    $sewa->update(['status' => 'batal']);
-                }
+                return response()->json(['message' => 'Data sewa tidak ditemukan atau review diperlukan'], 404);
             }
 
             return response()->json([
                 'message' => 'Callback processed',
-                'status' => $sewa->fresh()->status,
+                'status' => $sewa->status,
                 'order_id' => $orderId
             ]);
 

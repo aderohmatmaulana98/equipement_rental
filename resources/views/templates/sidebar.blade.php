@@ -2,10 +2,10 @@
 <aside class="pe-app-sidebar" id="sidebar">
         <div class="pe-app-sidebar-logo px-6 d-flex align-items-center position-relative">
             <!--begin::Brand Image-->
-            <a href="index.html" class="d-flex align-items-end logo-main">
-                <img height="35" width="34" class="logo-dark" alt="Dark Logo" src="{{ asset('assets/images/logo-md.png')}}">
-                <img height="35" width="34" class="logo-light" alt="Light Logo" src="{{ asset('assets/images/logo-md-light.png')}}">
-                <h3 class="text-body-emphasis fw-bolder mb-0 ms-1">Urbix</h3>
+            <a href="#" class="d-flex align-items-center logo-main">
+                <img height="35" width="35" class="logo-dark" alt="Citra Wiwara Logo" src="{{ asset('assets/images/logo-md.png')}}">
+                <img height="35" width="35" class="logo-light" alt="Citra Wiwara Logo" src="{{ asset('assets/images/logo-md-light.png')}}">
+                <h3 class="text-body-emphasis fw-bolder mb-0 ms-2">Citra Wiwara</h3>
             </a>
             <button type="button" id="sidebarDefaultArrow" class="btn btn-sm p-0 fs-16 text-body-emphasis ms-auto float-end d-none icon-hover-btn d-none"><i class="ri-arrow-right-line fs-5"></i></button>
             <!--end::Brand Image-->

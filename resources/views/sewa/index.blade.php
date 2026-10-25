@@ -188,9 +188,10 @@ async function payNow(event, id, type) {
         if (data.snapToken) {
             snap.pay(data.snapToken, {
                 onSuccess: function(result) {
-                    alert("Pembayaran sukses!");
-                    console.log(result);
-                    location.reload();
+                    console.log("Midtrans payment success:", result);
+                    const orderId = result.order_id || '';
+                    const status = result.transaction_status || 'settlement';
+                    window.location.href = `{{ route('sewa.index') }}?order_id=${encodeURIComponent(orderId)}&transaction_status=${encodeURIComponent(status)}`;
                 },
                 onPending: function(result) {
                     alert("Menunggu pembayaran...");

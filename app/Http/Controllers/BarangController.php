@@ -13,7 +13,7 @@ class BarangController extends Controller
     public function index()
     {
         $title = 'Barang';
-        $barangs = Barang::all();
+        $barangs = Barang::with('jenisBarang')->get();
         $jenisBarang = JenisBarang::all();
         return view('barang.index', compact('barangs','jenisBarang','title'));
     }

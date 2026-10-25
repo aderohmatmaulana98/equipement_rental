@@ -77,7 +77,7 @@ class UserController extends Controller
     public function list_barang()
     {
         $title = 'Ketersediaan Barang';
-        $barangs = Barang::all();
+        $barangs = Barang::with('jenisBarang')->get();
         $jenisBarang = JenisBarang::all();
         return view('user.list_barang', compact('barangs', 'jenisBarang', 'title'));
     }

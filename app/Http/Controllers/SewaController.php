@@ -14,9 +14,26 @@ class SewaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $title = 'Sewa Barang';
+        
+        // Handle return dari Midtrans payment redirect
+        if ($request->filled('order_id')) {
+            $orderId = $request->query('order_id');
+            $status = $request->query('transaction_status');
+            
+            $updatedSewa = PaymentController::processPaymentStatus($orderId, $status);
+            
+            if ($updatedSewa) {
+                $isLunas = str_contains($orderId, '-LUNAS-');
+                $msg = $isLunas
+                    ? 'Pembayaran pelunasan berhasil! Status sewa Anda telah disetujui (Lunas).'
+                    : 'Pembayaran DP 50% berhasil diverifikasi! Status sewa sekarang DP Lunas. Anda dapat melakukan pelunasan sebelum hari acara.';
+                
+                return redirect()->route('sewa.index')->with('success', $msg);
+            }
+        }
         
         // Auto-update status expired untuk sewa yang sudah lewat batas waktu pembayaran
         Sewa::where('id_user', auth()->id())
@@ -37,9 +54,11 @@ class SewaController extends Controller
      */
     public function create()
     {
-        $title = 'Tambah Sewa';
-        $barangs = Barang::where('stok', '>', 0)->get();
-        return view('sewa.create', compact('title', 'barangs'));
+        $title = 'Pilih Peralatan Sewa';
+        $barangs = Barang::with('jenisBarang')->where('stok', '>', 0)->get();
+        $categories = \App\Models\JenisBarang::all();
+        $cart = session()->get('cart', []);
+        return view('sewa.create', compact('title', 'barangs', 'categories', 'cart'));
     }
 
     /**
@@ -109,9 +128,6 @@ class SewaController extends Controller
                     'keterangan' => $barang->keterangan ?? '-',
                 ]);
 
-                // 🔹 Kurangi stok barang
-                $barang->decrement('stok', $qty);
-
                 $totalHarga += $subtotal;
             }
 
@@ -132,9 +148,34 @@ class SewaController extends Controller
 
     public function checkout(Request $request)
     {
+        $request->validate([
+            'tgl_sewa' => 'required|date',
+            'tgl_acara' => 'required|date',
+            'jam_acara' => 'required',
+            'tgl_loading' => 'required|date',
+            'jam_loading' => 'required',
+            'tgl_loading_out' => 'required|date|after_or_equal:tgl_acara',
+            'alamat_acara' => 'required|string',
+            'uang_muka' => 'nullable|numeric|min:0',
+        ], [
+            'tgl_loading_out.after_or_equal' => 'Tanggal Loading Out harus sama dengan atau setelah Tanggal Acara.',
+            'uang_muka.numeric' => 'Nominal DP harus berupa angka.',
+            'uang_muka.min' => 'Nominal DP tidak boleh kurang dari 0.',
+        ]);
+
         $cart = session()->get('cart', []);
         if (empty($cart)) {
             return response()->json(['error' => 'Keranjang kosong!'], 400);
+        }
+
+        // Validasi stok barang di keranjang sebelum checkout
+        foreach ($cart as $item) {
+            $barang = Barang::find($item['id']);
+            if (!$barang || $barang->stok < $item['qty']) {
+                $stokTersedia = $barang ? $barang->stok : 0;
+                $namaBarang = $item['nama'] ?? ($barang ? $barang->nama_barang : 'Barang');
+                return back()->withInput()->with('error', "Stok barang '{$namaBarang}' tidak mencukupi (tersedia: {$stokTersedia}). Silakan sesuaikan kuantitas di keranjang.");
+            }
         }
 
         DB::beginTransaction();
@@ -147,15 +188,26 @@ class SewaController extends Controller
 
             // Hitung durasi hari sewa dari tgl_acara sampai tgl_loading_out (inklusif)
             // Tanggal sama = 1 hari, tanggal 11 ke 12 = 2 hari, dst.
-            $durasiHari = $tglAcara->diffInDays($tglLoadingOut) + 1;
+            $durasiHari = max(1, $tglAcara->diffInDays($tglLoadingOut) + 1);
 
             // Hitung total harga dari keranjang: harga × qty × durasi
             $subtotalBarang = collect($cart)->sum(fn($item) => $item['harga'] * $item['qty']);
             $totalBiaya = $subtotalBarang * $durasiHari;
             
-            // DP = 50% dari total biaya
-            $uangMuka = $totalBiaya * 0.5;
-            $sisaPembayaran = $totalBiaya - $uangMuka;
+            // Hitung DP (Uang Muka) - Minimal 50% dari total sewa
+            $minDP = round($totalBiaya * 0.5);
+            if ($request->filled('uang_muka')) {
+                $uangMuka = (float) $request->uang_muka;
+                if ($totalBiaya > 0 && $uangMuka < ($totalBiaya * 0.5 - 0.01)) {
+                    return back()->withInput()->with('error', "Nominal DP minimal 50% dari total sewa (Minimal Rp " . number_format($minDP, 0, ',', '.') . ").");
+                }
+                if ($uangMuka > $totalBiaya) {
+                    return back()->withInput()->with('error', "Nominal DP tidak boleh melebihi total sewa (Maksimal Rp " . number_format($totalBiaya, 0, ',', '.') . ").");
+                }
+            } else {
+                $uangMuka = $minDP;
+            }
+            $sisaPembayaran = max(0, $totalBiaya - $uangMuka);
 
             // Buat data sewa
             $sewa = Sewa::create([

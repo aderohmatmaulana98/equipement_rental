@@ -44,6 +44,15 @@ class RolesSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'id' => 4,
+                'name' => 'Warehouse',
+                'slug' => 'warehouse',
+                'description' => 'Warehouse access with limited permissions',
+                'status' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
         // Gunakan updateOrInsert untuk setiap role

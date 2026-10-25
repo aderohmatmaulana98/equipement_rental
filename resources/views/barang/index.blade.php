@@ -170,7 +170,7 @@
                                 @foreach($barangs as $row)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $row->jenis_barang }}</td>
+                                        <td><span class="badge bg-secondary-subtle text-secondary">{{ $row->jenisBarang->nama_jenis_barang ?? '-' }}</span></td>
                                         <td>{{ $row->nama_barang }}</td>
                                         <td>{{ $row->satuan }}</td>
                                         <td>{{ $row->harga }}</td>

@@ -63,7 +63,7 @@ class WarehouseController extends Controller
     public function list_barang()
     {
         $title = 'Ketersediaan Barang';
-        $barangs = Barang::all();
+        $barangs = Barang::with('jenisBarang')->get();
         $jenisBarang = JenisBarang::all();
         return view('warehouse.list_barang', compact('barangs', 'jenisBarang', 'title'));
     }
@@ -92,21 +92,8 @@ class WarehouseController extends Controller
         $sewa = Sewa::findOrFail($request->id);
         $previousStatus = $sewa->status;
         
-        // Jika status berubah menjadi 'selesai', kembalikan stok barang
-        if ($request->status === 'selesai' && $previousStatus !== 'selesai') {
-            $detailSewa = DetailSewa::where('id_sewa', $sewa->id)->get();
-            foreach ($detailSewa as $ds) {
-                Barang::where('id', $ds->id_barang)->increment('stok', $ds->qty);
-            }
-        }
-        
-        // Jika status berubah dari 'selesai' ke status lain (rollback), kurangi stok lagi
-        if ($previousStatus === 'selesai' && $request->status !== 'selesai') {
-            $detailSewa = DetailSewa::where('id_sewa', $sewa->id)->get();
-            foreach ($detailSewa as $ds) {
-                Barang::where('id', $ds->id_barang)->decrement('stok', $ds->qty);
-            }
-        }
+        // Sesuaikan stok barang secara otomatis (misal kembali ke gudang saat status 'selesai')
+        $sewa->adjustStockForStatusChange($previousStatus, $request->status);
         
         // Simpan catatan pengembalian jika ada
         if ($request->has('catatan_pengembalian')) {

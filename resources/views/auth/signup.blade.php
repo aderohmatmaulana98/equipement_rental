@@ -39,6 +39,9 @@
                     </script>
                 @endif
                 <div class="card-body p-8">
+                    <div class="text-center mb-6">
+                        <img src="{{ asset('assets/images/citra-wiwara-logo.png') }}" alt="Citra Wiwara Logo" style="height: 60px; object-fit: contain;">
+                    </div>
                     <h3 class="fw-medium text-center">Let’s get started!</h3>
                     <p class="mb-8 text-muted text-center">Create Your Account in Minutes</p>
                     <form method="post" action="{{ route('signup_action') }}">
@@ -77,7 +80,7 @@
                 </div>
             </div>
             <p class="position-relative text-center fs-13 mb-0">©
-                <script>document.write(new Date().getFullYear())</script> Urbix. Crafted with by Pixeleyez
+                <script>document.write(new Date().getFullYear())</script> Citra Wiwara. Equipment Rental System
             </p>
         </div>
     </div>

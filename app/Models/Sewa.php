@@ -62,4 +62,39 @@ class Sewa extends Model
     {
         return $this->belongsTo(Barang::class, 'id');
     }
+
+    /**
+     * Cek apakah status sewa merupakan status aktif yang menahan / mengurangi stok barang.
+     * Status aktif (stok keluar): dp_lunas, disetujui, berjalan.
+     * Status tidak menahan stok: belum bayar, pending, batal, dibatalkan, expired, selesai.
+     */
+    public static function isStockHeldStatus(?string $status): bool
+    {
+        return in_array($status, ['dp_lunas', 'disetujui', 'berjalan']);
+    }
+
+    /**
+     * Sesuaikan stok barang saat terjadi perubahan status sewa.
+     * - Inactive -> Active   : Barang KELUAR (stok berkurang)
+     * - Active   -> Inactive : Barang MASUK kembali / Selesai / Dibatalkan (stok bertambah)
+     * - Active   -> Active   : Tidak ada perubahan stok (misal: dp_lunas -> disetujui)
+     * - Inactive -> Inactive : Tidak ada perubahan stok (misal: belum bayar -> expired)
+     */
+    public function adjustStockForStatusChange(?string $fromStatus, ?string $toStatus): void
+    {
+        $wasHeld = self::isStockHeldStatus($fromStatus);
+        $nowHeld = self::isStockHeldStatus($toStatus);
+
+        if (!$wasHeld && $nowHeld) {
+            // Barang KELUAR: kurangi stok
+            foreach ($this->detailSewas as $ds) {
+                Barang::where('id', $ds->id_barang)->decrement('stok', $ds->qty);
+            }
+        } elseif ($wasHeld && !$nowHeld) {
+            // Barang MASUK (kembali ke gudang / dibatalkan): tambahkan stok
+            foreach ($this->detailSewas as $ds) {
+                Barang::where('id', $ds->id_barang)->increment('stok', $ds->qty);
+            }
+        }
+    }
 }

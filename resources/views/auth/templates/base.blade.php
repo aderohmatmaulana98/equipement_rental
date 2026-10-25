@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Shared on THEMELOCK.COM - Sign In | Urbix Admin & Dashboards Template </title>
+  <title>Sign In | Citra Wiwara</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta content="Admin & Dashboards Template" name="description" />
   <meta content="Pixeleyez" name="author" />

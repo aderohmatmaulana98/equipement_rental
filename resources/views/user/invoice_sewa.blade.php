@@ -35,15 +35,22 @@
             margin-bottom: 30px;
         }
         
-        .company-info h1 {
-            font-size: 24px;
-            color: #2563eb;
-            margin-bottom: 5px;
+        .company-info {
+            max-width: 380px;
+        }
+        
+        .company-info .company-logo {
+            height: 65px;
+            width: auto;
+            object-fit: contain;
+            margin-bottom: 10px;
+            display: block;
         }
         
         .company-info p {
-            color: #666;
+            color: #555;
             font-size: 11px;
+            line-height: 1.5;
         }
         
         .invoice-title {
@@ -338,9 +345,8 @@
         <!-- Header -->
         <div class="invoice-header">
             <div class="company-info">
-                <h1>Equipment Rental</h1>
-                <p>Jl. Contoh Alamat No. 123</p>
-                <p>Telp: (021) 123-4567 | Email: info@equipmentrental.com</p>
+                <img src="{{ asset('assets/images/citra-wiwara-logo.png') }}" alt="Citra Wiwara Logo" class="company-logo">
+                <p>Jl Gatotkoco No. 6, Wirobrajan, Kemantren Wirobrajan, Kota Yogyakarta</p>
             </div>
             <div class="invoice-title">
                 <h2>INVOICE</h2>
@@ -379,7 +385,7 @@
             $tglAcara = \Carbon\Carbon::parse($sewa->tgl_acara);
             $tglLoadingOut = \Carbon\Carbon::parse($sewa->tgl_loading_out);
             // Hitung inklusif: tanggal sama = 1 hari, 11 ke 12 = 2 hari
-            $durasiHari = $tglAcara->diffInDays($tglLoadingOut) + 1;
+            $durasiHari = max(1, (int)$tglAcara->diffInDays($tglLoadingOut) + 1);
         @endphp
         <div class="event-info">
             <h3>📅 Informasi Acara</h3>
@@ -413,6 +419,7 @@
                 <tr>
                     <th style="width: 30px;">No</th>
                     <th>Nama Barang</th>
+                    <th>Keterangan</th>
                     <th style="width: 40px;">Qty</th>
                     <th style="width: 100px;">Harga Satuan</th>
                     <th style="width: 50px;">Durasi</th>
@@ -424,6 +431,7 @@
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $detail->barang->nama_barang ?? '-' }}</td>
+                    <td>{{ $detail->keterangan ?: '-' }}</td>
                     <td>{{ $detail->qty }}</td>
                     <td>Rp {{ number_format($detail->harga_satuan, 0, ',', '.') }}</td>
                     <td>{{ $durasiHari }} hari</td>
@@ -454,14 +462,14 @@
                     <td>Rp {{ number_format($sewa->total_biaya, 0, ',', '.') }}</td>
                 </tr>
                 <tr>
-                    <td>Uang Muka (DP 50%)</td>
+                    <td>Uang Muka (DP {{ $sewa->total_biaya > 0 ? round(($sewa->uang_muka / $sewa->total_biaya) * 100) . '%' : '' }})</td>
                     <td>
                         Rp {{ number_format($sewa->uang_muka, 0, ',', '.') }}
                         @if($isDPLunas || $isLunas) ✓ @endif
                     </td>
                 </tr>
                 <tr>
-                    <td>Pelunasan (50%)</td>
+                    <td>Pelunasan</td>
                     <td>
                         Rp {{ number_format($sewa->sisa_pembayaran ?? ($sewa->total_biaya - $sewa->uang_muka), 0, ',', '.') }}
                         @if($isLunas) ✓ @endif
@@ -499,7 +507,7 @@
             <div class="signature">
                 <p>Hormat Kami,</p>
                 <div class="signature-line">
-                    Equipment Rental
+                    Citra Wiwara
                 </div>
             </div>
         </div>

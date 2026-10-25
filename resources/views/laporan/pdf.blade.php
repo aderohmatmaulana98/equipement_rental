@@ -29,9 +29,17 @@
 </head>
 <body>
 
+    @php
+        $logoPath = public_path('assets/images/citra-wiwara-logo.png');
+        $logoBase64 = file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : '';
+    @endphp
     <div class="header">
-        <h1>Equipment Rental Corp</h1>
-        <p>Jl. Contoh Alamat No. 123, Kota Besar, Indonesia | Telp: (021) 123-4567 | Email: info@equipmentrental.com</p>
+        @if($logoBase64)
+            <img src="{{ $logoBase64 }}" style="height: 50px; margin-bottom: 5px;" alt="Citra Wiwara Logo"><br>
+        @else
+            <h1>Citra Wiwara</h1>
+        @endif
+        <p>Jl Gatotkoco No. 6, Wirobrajan, Kemantren Wirobrajan, Kota Yogyakarta</p>
     </div>
 
     <table class="meta-info">

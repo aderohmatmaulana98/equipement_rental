@@ -91,7 +91,7 @@
                                 $tglAcara = \Carbon\Carbon::parse($sewa->tgl_acara);
                                 $tglLoadingOut = \Carbon\Carbon::parse($sewa->tgl_loading_out);
                                 // Hitung inklusif: tanggal sama = 1 hari, 11 ke 12 = 2 hari
-                                $durasiHari = $tglAcara->diffInDays($tglLoadingOut) + 1;
+                                $durasiHari = max(1, (int)$tglAcara->diffInDays($tglLoadingOut) + 1);
                             @endphp
                             <table class="table table-borderless mb-0">
                                 <tr>
@@ -151,7 +151,7 @@
                                     <td>Rp {{ number_format($sewa->total_biaya, 0, ',', '.') }}</td>
                                 </tr>
                                 <tr>
-                                    <th>DP (50%)</th>
+                                    <th>DP ({{ $sewa->total_biaya > 0 ? round(($sewa->uang_muka / $sewa->total_biaya) * 100) : 50 }}%)</th>
                                     <td>
                                         Rp {{ number_format($sewa->uang_muka, 0, ',', '.') }}
                                         @if($isDPLunas || $isLunas)
@@ -162,7 +162,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th>Pelunasan (50%)</th>
+                                    <th>Pelunasan</th>
                                     <td>
                                         Rp {{ number_format($sewa->sisa_pembayaran ?? ($sewa->total_biaya - $sewa->uang_muka), 0, ',', '.') }}
                                         @if($isLunas)
@@ -221,6 +221,7 @@
                                     <tr>
                                         <th>No</th>
                                         <th>Nama Barang</th>
+                                        <th>Keterangan</th>
                                         <th>Qty</th>
                                         <th>Harga Satuan</th>
                                         <th>Durasi</th>
@@ -232,6 +233,7 @@
                                         <tr>
                                             <td>{{ $loop->iteration }}</td>
                                             <td>{{ $detail->barang->nama_barang ?? '-' }}</td>
+                                            <td>{{ $detail->keterangan ?: '-' }}</td>
                                             <td>{{ $detail->qty }}</td>
                                             <td>Rp {{ number_format($detail->harga_satuan, 0, ',', '.') }}</td>
                                             <td>{{ $durasiHari }} hari</td>
@@ -244,7 +246,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr class="table-dark">
-                                        <th colspan="5" class="text-end">Total</th>
+                                        <th colspan="6" class="text-end">Total</th>
                                         <th>Rp {{ number_format($sewa->total_biaya, 0, ',', '.') }}</th>
                                     </tr>
                                 </tfoot>

@@ -3,7 +3,7 @@
 <head>
 
     <meta charset="utf-8" />
-    <title>Eqipment Rental Information System</title>
+    <title>Citra Wiwara - Equipment Rental</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta content="Admin & Dashboards Template" name="description" />
     <meta content="Pixeleyez" name="author" />

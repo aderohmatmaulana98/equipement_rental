@@ -225,27 +225,14 @@ class AdminController extends Controller
     {
         $request->validate([
             'id' => 'required|exists:sewas,id',
-            'status' => 'required|in:pending,disetujui,dibatalkan',
+            'status' => 'required|in:dp_lunas,disetujui,dibatalkan,pending',
         ]);
 
         $sewa = \App\Models\Sewa::findOrFail($request->id);
         $previousStatus = $sewa->status;
         
-        // Jika status berubah menjadi 'selesai', kembalikan stok barang
-        if ($request->status === 'selesai' && $previousStatus !== 'selesai') {
-            $detailSewa = \App\Models\DetailSewa::where('id_sewa', $sewa->id)->get();
-            foreach ($detailSewa as $ds) {
-                Barang::where('id', $ds->id_barang)->increment('stok', $ds->qty);
-            }
-        }
-        
-        // Jika status berubah dari 'selesai' ke status lain (rollback), kurangi stok lagi
-        if ($previousStatus === 'selesai' && $request->status !== 'selesai') {
-            $detailSewa = \App\Models\DetailSewa::where('id_sewa', $sewa->id)->get();
-            foreach ($detailSewa as $ds) {
-                Barang::where('id', $ds->id_barang)->decrement('stok', $ds->qty);
-            }
-        }
+        // Sesuaikan stok secara otomatis (dibatalkan -> stok kembali; disetujui -> stok keluar)
+        $sewa->adjustStockForStatusChange($previousStatus, $request->status);
         
         $sewa->status = $request->status;
         $sewa->save();
@@ -287,13 +274,19 @@ class AdminController extends Controller
             'jam_acara' => 'required',
             'tgl_loading' => 'required|date',
             'jam_loading' => 'required',
-            'tgl_loading_out' => 'required|date',
+            'tgl_loading_out' => 'required|date|after_or_equal:tgl_acara',
             'alamat_acara' => 'required|string',
             'barang_id' => 'required|array|min:1',
             'qty' => 'required|array',
+            'keterangan' => 'nullable|array',
             'status_pembayaran' => 'required|in:belum_bayar,dp_lunas,lunas',
             'diskon_tipe' => 'nullable|in:persen,nominal',
             'diskon_nilai' => 'nullable|numeric|min:0',
+            'uang_muka' => 'nullable|numeric|min:0',
+        ], [
+            'tgl_loading_out.after_or_equal' => 'Tanggal Loading Out harus sama dengan atau setelah Tanggal Acara.',
+            'uang_muka.numeric' => 'Nominal DP harus berupa angka.',
+            'uang_muka.min' => 'Nominal DP tidak boleh bernilai negatif.',
         ]);
 
         DB::beginTransaction();
@@ -305,7 +298,7 @@ class AdminController extends Controller
             $tglLoadingOut = \Carbon\Carbon::parse($request->tgl_loading_out);
             // Hitung durasi hari sewa dari tgl_acara sampai tgl_loading_out (inklusif)
             // Tanggal sama = 1 hari, tanggal 11 ke 12 = 2 hari, dst.
-            $durasiHari = $tglAcara->diffInDays($tglLoadingOut) + 1;
+            $durasiHari = max(1, $tglAcara->diffInDays($tglLoadingOut) + 1);
 
             // Hitung total dari barang (sebelum diskon)
             $totalSebelumDiskon = 0;
@@ -321,12 +314,14 @@ class AdminController extends Controller
                 
                 $subtotal = $barang->harga * $qty * $durasiHari;
                 $totalSebelumDiskon += $subtotal;
+                $keteranganItem = isset($request->keterangan[$index]) ? trim($request->keterangan[$index]) : null;
                 
                 $detailItems[] = [
                     'id_barang' => $barangId,
                     'qty' => $qty,
                     'harga_satuan' => $barang->harga,
                     'subtotal' => $subtotal,
+                    'keterangan' => !empty($keteranganItem) ? $keteranganItem : null,
                 ];
             }
 
@@ -348,8 +343,21 @@ class AdminController extends Controller
                 $totalBiaya = $totalSebelumDiskon - $diskonNominal;
             }
 
-            $uangMuka = $totalBiaya * 0.5;
-            $sisaPembayaran = $totalBiaya - $uangMuka;
+            // Hitung DP (Uang Muka) - Minimal 50% dari total sewa
+            $minDP = round($totalBiaya * 0.5);
+            if ($request->filled('uang_muka')) {
+                $uangMuka = (float) $request->uang_muka;
+                if ($totalBiaya > 0 && $uangMuka < ($totalBiaya * 0.5 - 0.01)) {
+                    throw new \Exception("Nominal DP minimal 50% dari total sewa (Minimal Rp " . number_format($minDP, 0, ',', '.') . ").");
+                }
+                if ($uangMuka > $totalBiaya) {
+                    throw new \Exception("Nominal DP tidak boleh melebihi total sewa (Maksimal Rp " . number_format($totalBiaya, 0, ',', '.') . ").");
+                }
+            } else {
+                $uangMuka = $minDP;
+            }
+
+            $sisaPembayaran = max(0, $totalBiaya - $uangMuka);
 
             // Determine status based on payment
             $status = 'belum bayar';
@@ -380,7 +388,7 @@ class AdminController extends Controller
                 'id_user' => $request->id_user,
             ]);
 
-            // Create detail sewa and reduce stock
+            // Create detail sewa
             foreach ($detailItems as $item) {
                 \App\Models\DetailSewa::create([
                     'id_sewa' => $sewa->id,
@@ -388,11 +396,12 @@ class AdminController extends Controller
                     'qty' => $item['qty'],
                     'harga_satuan' => $item['harga_satuan'],
                     'subtotal' => $item['subtotal'],
+                    'keterangan' => $item['keterangan'] ?? null,
                 ]);
-                
-                // Kurangi stok
-                Barang::where('id', $item['id_barang'])->decrement('stok', $item['qty']);
             }
+
+            // Kurangi stok jika status awal adalah status aktif (dp_lunas atau disetujui)
+            $sewa->adjustStockForStatusChange('belum bayar', $status);
 
             DB::commit();
 

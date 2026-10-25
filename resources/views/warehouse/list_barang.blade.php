@@ -73,14 +73,13 @@
                         <table id="example" class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>No</th >
-                                    <th>Jenis Barang</th >
-                                    <th>Nama Barang</th >
-                                    <th>Satuan</th >
-                                    <th>Harga</th >
-                                    <th>Keterangan</th >
-                                    <th>Stok</th >
-                                    <th>Gambar</th >
+                                    <th>No</th>
+                                    <th>Jenis Barang</th>
+                                    <th>Nama Barang</th>
+                                    <th>Satuan</th>
+                                    <th>Keterangan</th>
+                                    <th>Stok</th>
+                                    <th>Gambar</th>
                                     <th>Status Ketersediaan</th>
                                 </tr>
                             </thead>
@@ -88,14 +87,13 @@
                                 @foreach($barangs as $row)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $row->jenis_barang }}</td>
-                                        <td>{{ $row->nama_barang }}</td>
+                                        <td><span class="badge bg-secondary-subtle text-secondary">{{ $row->jenisBarang->nama_jenis_barang ?? '-' }}</span></td>
+                                        <td><strong>{{ $row->nama_barang }}</strong></td>
                                         <td>{{ $row->satuan }}</td>
-                                        <td>{{ $row->harga }}</td>
                                         <td>{{ $row->keterangan }}</td>
-                                        <td>{{ $row->stok }}</td>
+                                        <td><span class="badge {{ $row->stok > 0 ? 'bg-primary' : 'bg-danger' }} fs-12">{{ $row->stok }}</span></td>
                                         <td>
-                                            <img src="{{ asset('storage/' . $row->gambar) }}" alt="gambar" height="100">
+                                            <img src="{{ asset('storage/' . $row->gambar) }}" alt="gambar" height="100" class="rounded border">
                                         </td>
                                         <td>
                                             @if ($row->stok > 0)
@@ -109,15 +107,14 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th>No</th >
-                                    <th>Jenis Barang</th >
-                                    <th>Nama Barang</th >
-                                    <th>Satuan</th >
-                                    <th>Harga</th >
-                                    <th>Keterangan</th >
-                                    <th>Stok</th >
-                                    <th>Gambar</th >
-                                    <th>Aksi</th>
+                                    <th>No</th>
+                                    <th>Jenis Barang</th>
+                                    <th>Nama Barang</th>
+                                    <th>Satuan</th>
+                                    <th>Keterangan</th>
+                                    <th>Stok</th>
+                                    <th>Gambar</th>
+                                    <th>Status Ketersediaan</th>
                                 </tr>
                             </tfoot>
                         </table>
