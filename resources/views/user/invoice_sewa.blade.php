@@ -465,14 +465,24 @@
                     <td>Uang Muka (DP {{ $sewa->total_biaya > 0 ? round(($sewa->uang_muka / $sewa->total_biaya) * 100) . '%' : '' }})</td>
                     <td>
                         Rp {{ number_format($sewa->uang_muka, 0, ',', '.') }}
-                        @if($isDPLunas || $isLunas) ✓ @endif
+                        @if($isDPLunas || $isLunas) 
+                            ✓
+                            @if($sewa->waktu_dp_formatted)
+                                <br><small style="color: #666; font-size: 9px;">Lunas: {{ $sewa->waktu_dp_formatted }}</small>
+                            @endif
+                        @endif
                     </td>
                 </tr>
                 <tr>
-                    <td>Pelunasan</td>
+                    <td>Pelunasan {{ $sewa->total_biaya > 0 ? '(' . max(0, 100 - round(($sewa->uang_muka / $sewa->total_biaya) * 100)) . '%)' : '' }}</td>
                     <td>
-                        Rp {{ number_format($sewa->sisa_pembayaran ?? ($sewa->total_biaya - $sewa->uang_muka), 0, ',', '.') }}
-                        @if($isLunas) ✓ @endif
+                        Rp {{ number_format(max(0, $sewa->total_biaya - $sewa->uang_muka), 0, ',', '.') }}
+                        @if($isLunas) 
+                            ✓
+                            @if($sewa->waktu_lunas_formatted)
+                                <br><small style="color: #666; font-size: 9px;">Lunas: {{ $sewa->waktu_lunas_formatted }}</small>
+                            @endif
+                        @endif
                     </td>
                 </tr>
                 <tr class="paid">

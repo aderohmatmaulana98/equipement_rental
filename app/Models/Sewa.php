@@ -36,7 +36,30 @@ class Sewa extends Model
         'diskon_persen',
         'diskon_nominal',
         'total_sebelum_diskon',
+        'waktu_dp',
+        'waktu_lunas',
     ];
+
+    protected $casts = [
+        'waktu_dp' => 'datetime',
+        'waktu_lunas' => 'datetime',
+        'tgl_pembayaran' => 'datetime',
+        'batas_waktu_pembayaran' => 'datetime',
+    ];
+
+    // Helper: Accessor format waktu DP
+    public function getWaktuDpFormattedAttribute()
+    {
+        $time = $this->waktu_dp ?? (in_array($this->status, ['dp_lunas', 'disetujui', 'berjalan', 'selesai']) ? ($this->tgl_pembayaran ?? $this->updated_at) : null);
+        return $time ? \Carbon\Carbon::parse($time)->locale('id')->isoFormat('dddd, D MMMM Y HH:mm [WIB]') : null;
+    }
+
+    // Helper: Accessor format waktu Lunas
+    public function getWaktuLunasFormattedAttribute()
+    {
+        $time = $this->waktu_lunas ?? (in_array($this->status, ['disetujui', 'berjalan', 'selesai']) ? ($this->tgl_pembayaran ?? $this->updated_at) : null);
+        return $time ? \Carbon\Carbon::parse($time)->locale('id')->isoFormat('dddd, D MMMM Y HH:mm [WIB]') : null;
+    }
 
     // 🔗 Relasi
     public function user()

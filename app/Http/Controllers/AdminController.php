@@ -235,6 +235,27 @@ class AdminController extends Controller
         $sewa->adjustStockForStatusChange($previousStatus, $request->status);
         
         $sewa->status = $request->status;
+
+        if ($request->status === 'dp_lunas') {
+            if (!$sewa->waktu_dp) {
+                $sewa->waktu_dp = now();
+            }
+            if (!$sewa->tgl_pembayaran) {
+                $sewa->tgl_pembayaran = now();
+            }
+        } elseif ($request->status === 'disetujui') {
+            // Jika belum ada waktu DP (misal langsung lunas), set waktu DP sekarang
+            if (!$sewa->waktu_dp) {
+                $sewa->waktu_dp = now();
+            }
+            // Langsung ambil waktu sekarang untuk waktu pelunasan
+            if (!$sewa->waktu_lunas) {
+                $sewa->waktu_lunas = now();
+            }
+            $sewa->sisa_pembayaran = 0;
+            $sewa->tgl_pembayaran = now();
+        }
+
         $sewa->save();
 
         return redirect()->back()->with('success', 'Status sewa berhasil diperbarui!');
@@ -361,10 +382,18 @@ class AdminController extends Controller
 
             // Determine status based on payment
             $status = 'belum bayar';
+            $waktuDp = null;
+            $waktuLunas = null;
+            $tglPembayaran = null;
             if ($request->status_pembayaran === 'dp_lunas') {
                 $status = 'dp_lunas';
+                $waktuDp = now();
+                $tglPembayaran = now();
             } elseif ($request->status_pembayaran === 'lunas') {
                 $status = 'disetujui';
+                $waktuDp = now();
+                $waktuLunas = now();
+                $tglPembayaran = now();
             }
 
             // Create sewa
@@ -385,6 +414,9 @@ class AdminController extends Controller
                 'uang_muka' => $uangMuka,
                 'sisa_pembayaran' => $sisaPembayaran,
                 'status' => $status,
+                'waktu_dp' => $waktuDp,
+                'waktu_lunas' => $waktuLunas,
+                'tgl_pembayaran' => $tglPembayaran,
                 'id_user' => $request->id_user,
             ]);
 

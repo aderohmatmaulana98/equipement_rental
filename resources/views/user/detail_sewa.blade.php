@@ -153,24 +153,38 @@
                                 <tr>
                                     <th>DP ({{ $sewa->total_biaya > 0 ? round(($sewa->uang_muka / $sewa->total_biaya) * 100) : 50 }}%)</th>
                                     <td>
-                                        Rp {{ number_format($sewa->uang_muka, 0, ',', '.') }}
-                                        @if($isDPLunas || $isLunas)
-                                            <span class="badge bg-success ms-2">Lunas</span>
-                                        @else
-                                            <span class="badge bg-danger ms-2">Belum Bayar</span>
+                                        <div class="d-flex align-items-center flex-wrap">
+                                            <span>Rp {{ number_format($sewa->uang_muka, 0, ',', '.') }}</span>
+                                            @if($isDPLunas || $isLunas)
+                                                <span class="badge bg-success ms-2">Lunas</span>
+                                            @else
+                                                <span class="badge bg-danger ms-2">Belum Bayar</span>
+                                            @endif
+                                        </div>
+                                        @if(($isDPLunas || $isLunas) && $sewa->waktu_dp_formatted)
+                                            <div class="small text-muted mt-1">
+                                                <i class="bi bi-clock-history me-1 text-primary"></i>Waktu DP: <span class="fw-medium text-dark">{{ $sewa->waktu_dp_formatted }}</span>
+                                            </div>
                                         @endif
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th>Pelunasan</th>
+                                    <th>Pelunasan ({{ $sewa->total_biaya > 0 ? max(0, 100 - round(($sewa->uang_muka / $sewa->total_biaya) * 100)) : 50 }}%)</th>
                                     <td>
-                                        Rp {{ number_format($sewa->sisa_pembayaran ?? ($sewa->total_biaya - $sewa->uang_muka), 0, ',', '.') }}
-                                        @if($isLunas)
-                                            <span class="badge bg-success ms-2">Lunas</span>
-                                        @elseif($isDPLunas)
-                                            <span class="badge bg-warning text-dark ms-2">Menunggu Pelunasan</span>
-                                        @else
-                                            <span class="badge bg-secondary ms-2">-</span>
+                                        <div class="d-flex align-items-center flex-wrap">
+                                            <span>Rp {{ number_format(max(0, $sewa->total_biaya - $sewa->uang_muka), 0, ',', '.') }}</span>
+                                            @if($isLunas)
+                                                <span class="badge bg-success ms-2">Lunas</span>
+                                            @elseif($isDPLunas)
+                                                <span class="badge bg-warning text-dark ms-2">Menunggu Pelunasan</span>
+                                            @else
+                                                <span class="badge bg-secondary ms-2">-</span>
+                                            @endif
+                                        </div>
+                                        @if($isLunas && $sewa->waktu_lunas_formatted)
+                                            <div class="small text-muted mt-1">
+                                                <i class="bi bi-clock-history me-1 text-success"></i>Waktu Lunas: <span class="fw-medium text-dark">{{ $sewa->waktu_lunas_formatted }}</span>
+                                            </div>
                                         @endif
                                     </td>
                                 </tr>

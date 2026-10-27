@@ -192,8 +192,12 @@ class PaymentController extends Controller
                         'status' => 'disetujui',
                         'sisa_pembayaran' => 0,
                         'tgl_pembayaran' => now(),
+                        'waktu_lunas' => now(),
                         'snap_token_pelunasan' => null,
                     ]);
+                    if (!$sewa->waktu_dp) {
+                        $sewa->update(['waktu_dp' => now()]);
+                    }
                     $sewa->adjustStockForStatusChange($previousStatus, 'disetujui');
                 }
             } else {
@@ -203,6 +207,7 @@ class PaymentController extends Controller
                     $sewa->update([
                         'status' => 'dp_lunas',
                         'tgl_pembayaran' => now(),
+                        'waktu_dp' => now(),
                         'snap_token' => null,
                         'batas_waktu_pembayaran' => $sewa->tgl_loading 
                             ? $sewa->tgl_loading . ' ' . ($sewa->jam_loading ?? '08:00:00') 
